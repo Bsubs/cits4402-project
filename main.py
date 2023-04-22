@@ -1,9 +1,10 @@
 import sys
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QImage
-from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QSlider, QVBoxLayout, QHBoxLayout, QWidget, QFileDialog, QPushButton, QGridLayout
+from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QSlider, QVBoxLayout, QDoubleSpinBox, QWidget, QFileDialog, QPushButton, QGridLayout, QScrollArea
 import cv2
 import numpy as np
+from skimage.measure import label, regionprops
 
 
 class MainWindow(QMainWindow):
@@ -35,10 +36,12 @@ class MainWindow(QMainWindow):
 
         # Create slider widgets for tminArea and tmaxArea
         self.tminArea_slider = QSlider(Qt.Horizontal)
+        self.tminArea_slider.setMaximum(200)
         self.tmaxArea_slider = QSlider(Qt.Horizontal)
+        self.tmaxArea_slider.setMaximum(200)
         # Set default values for tminArea and tmaxArea
-        self.tminArea = 5
-        self.tmaxArea = 10
+        self.tminArea = 40
+        self.tmaxArea = 150
         # Connect slider widgets to update functions
         self.tminArea_slider.valueChanged.connect(self.update_tminArea)
         self.tmaxArea_slider.valueChanged.connect(self.update_tmaxArea)
@@ -46,10 +49,13 @@ class MainWindow(QMainWindow):
         tminArea_label = QLabel('tminArea: ')
         tmaxArea_label = QLabel('tmaxArea: ')
 
-        # Create slider widgets for tminArea and tmaxArea
-        self.taxisRatio_slider = QSlider(Qt.Horizontal)
+        # Create slider widgets for taxisratio
+        self.taxisRatio_slider = QDoubleSpinBox()
+        self.taxisRatio_slider.setRange(0, 1)
+        self.taxisRatio_slider.setSingleStep(0.1)
         self.cca_btn = QPushButton("Connected Components Analysis", self)
-        self.taxisRatio = 0.5
+        # taxisratio=1 would be a perfect circle, 0.8 allows for some noise
+        self.taxisRatio = 0.8
         # Connect widgets to update functions
         self.taxisRatio_slider.valueChanged.connect(self.update_taxisRatio)
         self.cca_btn.clicked.connect(self.filter_clusters)
@@ -77,17 +83,24 @@ class MainWindow(QMainWindow):
         grid_layout.addWidget(taxisRatio_label, 6, 0)
         grid_layout.addWidget(self.taxisRatio_slider, 6, 1, 1, 3)
         grid_layout.addWidget(self.cca_btn, 7, 0, 1, 4)
+        grid_layout.addWidget(self.cca_label, 8,1)
         grid_layout.setColumnStretch(2, 1)  # add stretch to the empty cell
 
         # Add grid layout to main layout
         layout.addLayout(grid_layout)
 
         # Create central widget and set layout
+        self.scroll = QScrollArea()
         central_widget = QWidget()
         central_widget.setLayout(layout)
 
+        self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.scroll.setWidgetResizable(True)
+        self.scroll.setWidget(central_widget)
+
         # Set central widget
-        self.setCentralWidget(central_widget)
+        self.setCentralWidget(self.scroll)
 
         # Set window properties
         self.setWindowTitle('Image Segmentation')
@@ -120,10 +133,10 @@ class MainWindow(QMainWindow):
         mask = ((min_intensities < self.tminColor) | (max_intensities - min_intensities > self.tdiffColor)).astype(np.uint8) * 255
 
         # Apply mask to original original_image
-        result = cv2.bitwise_and(self.original_image, self.original_image, mask=mask)
+        self.masked_image = cv2.bitwise_and(self.original_image, self.original_image, mask=mask)
 
         # Update image label with new image
-        self.display_image(result, self.masked_image_label)
+        self.display_image(self.masked_image, self.masked_image_label)
 
     def update_tminColor(self, value):
         # Update tminColor value
@@ -139,24 +152,45 @@ class MainWindow(QMainWindow):
         # Regenerate segmentation mask
         self.generate_mask()
 
-    def filter_clusters(self, image, tminArea, tmaxArea):
+    def filter_clusters(self):
         # Convert image to grayscale
-        gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        gray_image = cv2.cvtColor(self.masked_image, cv2.COLOR_BGR2GRAY)
 
         # Apply thresholding to obtain binary image
         _, binary_image = cv2.threshold(gray_image, 0, 255, cv2.THRESH_BINARY)
 
-        # Perform connected component analysis on binary image
-        num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(binary_image)
+       # Perform connected component analysis on binary image using skimage.measure.label()
+        labeled_image = label(binary_image, connectivity=2)
+        props = regionprops(labeled_image)
 
         # Filter out small and large clusters based on area thresholds
         cluster_mask = np.zeros_like(binary_image)
-        for i in range(1, num_labels):
-            if tminArea <= stats[i, cv2.CC_STAT_AREA] <= tmaxArea:
-                cluster_mask[labels == i] = 255
+        for prop in props:
+            if self.tminArea <= prop.area <= self.tmaxArea:
+                # Compute covariance matrix of pixel coordinates in region
+                coords = prop.coords
+                cov = np.cov(coords.T)
+
+                # Compute eigenvalues and eigenvectors of covariance matrix
+                evals, evecs = np.linalg.eig(cov)
+
+                # Sort eigenvalues in descending order
+                idx = np.argsort(evals)[::-1]
+                evals = evals[idx]
+                evecs = evecs[:, idx]
+
+                # Compute minor and major axis lengths and their ratio
+                sigma_min, sigma_max = np.sqrt(evals)
+                ratio = sigma_min / sigma_max
+
+                # Filter out clusters with minor-to-major axis ratio below threshold
+                if 3 > ratio > self.taxisRatio:
+                    print(ratio)
+                    cluster_mask[labeled_image == prop.label] = 255
 
         # Apply mask to original image
-        filtered_image = cv2.bitwise_and(image, image, mask=cluster_mask)
+        filtered_image = cv2.bitwise_and(self.masked_image, self.masked_image, mask=cluster_mask)
+        self.display_image(filtered_image, self.cca_label)
     
     def update_tminArea(self, value):
         self.tminArea = value
