@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QSlider, QVBoxLay
 import cv2
 import numpy as np
 from skimage.measure import label, regionprops
-from scipy.spatial.distance import cdist
+from scipy.spatial import KDTree, distance_matrix
 from scipy.optimize import least_squares
 
 
@@ -57,12 +57,24 @@ class MainWindow(QMainWindow):
         self.taxisRatio_slider.setSingleStep(0.1)
         self.cca_btn = QPushButton("Connected Components Analysis", self)
         # taxisratio=1 would be a perfect circle, 0.8 allows for some noise
-        self.taxisRatio = 4
+        self.taxisRatio = 2.5
         # Connect widgets to update functions
         self.taxisRatio_slider.valueChanged.connect(self.update_taxisRatio)
         self.cca_btn.clicked.connect(self.filter_clusters)
         # Create labels for slider widgets
         taxisRatio_label = QLabel('taxisRatio: ')
+
+        # Create slider widgets for tellipse
+        self.tellipse_slider = QDoubleSpinBox()
+        self.tellipse_slider.setRange(0, 10)
+        self.tellipse_slider.setSingleStep(0.1)
+        self.cca_btn = QPushButton("Connected Components Analysis", self)
+        self.tellipse = 7
+        # Connect widgets to update functions
+        self.tellipse_slider.valueChanged.connect(self.update_tellipse)
+        self.cca_btn.clicked.connect(self.filter_clusters)
+        # Create labels for slider widgets
+        tellipse_label = QLabel('tellipse: ')
 
         # Create layout for widgets
         layout = QVBoxLayout()
@@ -84,9 +96,11 @@ class MainWindow(QMainWindow):
         grid_layout.addWidget(self.tmaxArea_slider, 5, 1, 1, 3)
         grid_layout.addWidget(taxisRatio_label, 6, 0)
         grid_layout.addWidget(self.taxisRatio_slider, 6, 1, 1, 3)
-        grid_layout.addWidget(self.cca_btn, 7, 0, 1, 4)
-        grid_layout.addWidget(self.cca_label, 8, 1)
-        grid_layout.addWidget(self.hexagon_label, 8, 2)
+        grid_layout.addWidget(tellipse_label, 7, 0)
+        grid_layout.addWidget(self.tellipse_slider, 7, 1, 1, 3)
+        grid_layout.addWidget(self.cca_btn, 8, 0, 1, 4)
+        grid_layout.addWidget(self.cca_label, 9, 1)
+        grid_layout.addWidget(self.hexagon_label, 9, 2)
         grid_layout.setColumnStretch(2, 1)  # add stretch to the empty cell
 
         # Add grid layout to main layout
@@ -149,8 +163,8 @@ class MainWindow(QMainWindow):
         _, self.binary_image = cv2.threshold(gray_image, 0, 255, cv2.THRESH_BINARY)
 
        # Perform connected component analysis on binary image using skimage.measure.label()
-        labeled_image = label(self.binary_image, connectivity=2)
-        self.props = regionprops(labeled_image)
+        self.labeled_image = label(self.binary_image, connectivity=2)
+        self.props = regionprops(self.labeled_image)
 
         # Filter out small and large clusters based on area thresholds
         cluster_mask = np.zeros_like(self.binary_image)
@@ -162,50 +176,50 @@ class MainWindow(QMainWindow):
 
                 # Filter out clusters with minor-to-major axis ratio below threshold
                 if ratio < self.taxisRatio:
-                    print(ratio)
-                    cluster_mask[labeled_image == prop.label] = 255
+                    cluster_mask[self.labeled_image == prop.label] = 255
 
         # Apply mask to original image
         self.eigen_image = cv2.bitwise_and(self.masked_image, self.masked_image, mask=cluster_mask)
         self.display_image(self.eigen_image, self.cca_label)
         self.find_target_clusters()
 
-    def find_nearest_clusters(self, centroids):
-        distances = cdist(centroids, centroids, metric='euclidean')
-        nearest_clusters = np.argsort(distances, axis=1)[:, 1:6]  # Exclude the first column as it's the distance to itself
-        return nearest_clusters
-
-    def fit_ellipse(self, points):
-        def ellipse_residuals(params, x, y):
-            a, b, x0, y0, phi = params
-            cos_phi, sin_phi = np.cos(phi), np.sin(phi)
-            x_transformed = (x - x0) * cos_phi + (y - y0) * sin_phi
-            y_transformed = -(x - x0) * sin_phi + (y - y0) * cos_phi
-            return (x_transformed / a) ** 2 + (y_transformed / b) ** 2 - 1
-
-        x, y = np.array(points).T
-        a, b, x0, y0 = (x.max() - x.min()) / 2, (y.max() - y.min()) / 2, x.mean(), y.mean()
-        initial_params = (a, b, x0, y0, 0)
-        res = least_squares(ellipse_residuals, initial_params, args=(x, y))
-        return res
-
-    def find_target_clusters(self, tellipse=0.1):
+    def find_target_clusters(self):
+        # Step 1: Find the five nearest clusters for each cluster
         centroids = np.array([prop.centroid for prop in self.props])
-        nearest_clusters = self.find_nearest_clusters(centroids)
+        kdtree = KDTree(centroids)
+        nearest_indices = kdtree.query(centroids, k=6)[1][:, 1:]
 
+        def ellipse_residual_error(params, selected_centroids):
+            # Helper function to compute residual error of ellipse fitting
+            x0, y0, a, b, theta = params
+            t = np.linspace(0, 2 * np.pi, 100)
+            ellipse_points = np.column_stack((a * np.cos(t), b * np.sin(t)))
+            rotation_matrix = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
+            ellipse_points_rotated = np.dot(ellipse_points, rotation_matrix) + np.array([x0, y0])
+            dists = distance_matrix(selected_centroids, ellipse_points_rotated)
+            min_dists = np.min(dists, axis=1)
+            return min_dists ** 2
+
+        # Step 2: Fit an ellipse on the six centroids
         target_clusters = []
-        for i, cluster in enumerate(nearest_clusters):
-            points = centroids[np.append(i, cluster)]
-            res = self.fit_ellipse(points)
-            max_residual = np.max(np.abs(res.fun))
+        for i, nearest in enumerate(nearest_indices):
+            selected_centroids = np.vstack((centroids[i], centroids[nearest]))
+            x0, y0 = np.mean(selected_centroids, axis=0)
+            a, b = (np.max(selected_centroids, axis=0) - np.min(selected_centroids, axis=0)) / 2
+            theta = 0
+            initial_params = [x0, y0, a, b, theta]
 
-            if max_residual < tellipse:
+            # Step 3: Compute residual error
+            result = least_squares(ellipse_residual_error, initial_params, args=(selected_centroids,))
+            residual_error = np.sum(result.fun)
+
+            # Step 4: Check if the largest residual error is less than the threshold
+            if residual_error < self.tellipse:
                 target_clusters.append(i)
 
+        # Step 5: Apply a mask to the original image to display only the target clusters
         target_mask = np.zeros_like(self.binary_image)
-        for target in target_clusters:
-            target_mask[self.eigen_image == self.props[target].label] = 255
-
+        target_mask[np.isin(self.labeled_image, [self.props[i].label for i in target_clusters])] = 255
         target_image = cv2.bitwise_and(self.eigen_image, self.eigen_image, mask=target_mask)
         self.display_image(target_image, self.hexagon_label)
     
@@ -232,6 +246,9 @@ class MainWindow(QMainWindow):
 
     def update_taxisRatio(self, value):
         self.taxisRatio = value
+
+    def update_tellipse(self, value):
+        self.tellipse = value
 
         
 def main():
