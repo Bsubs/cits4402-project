@@ -7,16 +7,7 @@ CITS4402 Project - Joo Kai Tay (22489437), Yusi Zhang (23458522), Runtian Lian (
 3. Enter the command 'conda activate cits4402_project' to activate the virtual environment 
 4. Enter the command 'python main.py' to run the application
 
-## Purpose and Design of the Application
-**Purpose**
-The purpose of the application is to implement the callibration process for a holographic acquisition rig.
-
-**Design**
-The project was implemented in Python using a variety of libraries for image processing. The GUI code was developed using PyQt5. Detailed explanations of each function will be provided below. 
-
-## Implementation
-
-### Navigating the GUI
+## Navigating the GUI
 - Load the image in question using the 'Load Image' button
     - This will display the original image on the left side of the screen
     - This will also display a masked image where pixels of red, blue and green have been segmented
@@ -26,6 +17,15 @@ The project was implemented in Python using a variety of libraries for image pro
     - Adjust the settings with 'tminArea', 'tmaxArea' and 'taxisRatio' to adjust the minimum area of clusters, maximum area of clusters and roundess of clusters detected
     - On the right side of the screen, only clusters that are part of a hexagonal target are displayed. 
         - Adjust the 'tellipse' field to adjust the sensitivity of this operation
+
+## Purpose and Design of the Application
+**Purpose**
+The purpose of the application is to implement the callibration process for a holographic acquisition rig.
+
+**Design**
+The project was implemented in Python using a variety of libraries for image processing. The GUI code was developed using PyQt5. Detailed explanations of each function will be provided below. 
+
+## Implementation
 
 ### generate_mask()
 - This function generates the initial segmentation mask based on certain threshold values
