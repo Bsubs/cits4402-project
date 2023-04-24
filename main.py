@@ -69,10 +69,12 @@ class MainWindow(QMainWindow):
         self.tellipse_slider.setRange(0, 10)
         self.tellipse_slider.setSingleStep(0.1)
         self.cca_btn = QPushButton("Connected Components Analysis", self)
+        self.cd_btn = QPushButton("Cluster Detection", self)
         self.tellipse = 7
         # Connect widgets to update functions
         self.tellipse_slider.valueChanged.connect(self.update_tellipse)
         self.cca_btn.clicked.connect(self.filter_clusters)
+        self.cd_btn.clicked.connect(self.find_target_clusters)
         # Create labels for slider widgets
         tellipse_label = QLabel('tellipse: ')
 
@@ -99,8 +101,9 @@ class MainWindow(QMainWindow):
         grid_layout.addWidget(tellipse_label, 7, 0)
         grid_layout.addWidget(self.tellipse_slider, 7, 1, 1, 3)
         grid_layout.addWidget(self.cca_btn, 8, 0, 1, 4)
-        grid_layout.addWidget(self.cca_label, 9, 1)
-        grid_layout.addWidget(self.hexagon_label, 9, 2)
+        grid_layout.addWidget(self.cd_btn, 9, 0, 1, 4)
+        grid_layout.addWidget(self.cca_label, 10, 1)
+        grid_layout.addWidget(self.hexagon_label, 10, 2)
         grid_layout.setColumnStretch(2, 1)  # add stretch to the empty cell
 
         # Add grid layout to main layout
@@ -112,7 +115,7 @@ class MainWindow(QMainWindow):
         central_widget.setLayout(layout)
 
         self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-        self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.scroll.setWidgetResizable(True)
         self.scroll.setWidget(central_widget)
 
@@ -181,7 +184,6 @@ class MainWindow(QMainWindow):
         # Apply mask to original image
         self.eigen_image = cv2.bitwise_and(self.masked_image, self.masked_image, mask=cluster_mask)
         self.display_image(self.eigen_image, self.cca_label)
-        self.find_target_clusters()
 
     def find_target_clusters(self):
         # Find the five nearest clusters for each cluster
