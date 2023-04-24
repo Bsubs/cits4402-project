@@ -2,10 +2,11 @@
 CITS4402 Project - Joo Kai Tay (22489437), Yusi Zhang (23458522), Runtian Lian (23485011)
 
 ## How to launch the application
-1. Open the anaconda terminal 
-2. Enter the command 'conda env create -f environment_cits4402_project.yml'
-3. Enter the command 'conda activate cits4402_project' to activate the virtual environment 
-4. Enter the command 'python main.py' to run the application
+1. Open the anaconda terminal
+2. Navigate to the directory where you have extracted the zip file into  
+3. Enter the command 'conda env create -f environment_cits4402_project.yml'
+4. Enter the command 'conda activate cits4402-2023' to activate the virtual environment 
+5. Enter the command 'python main.py' to run the application
 
 ## Navigating the GUI
 - Load the image in question using the 'Load Image' button
@@ -39,9 +40,16 @@ The project was implemented in Python using a variety of libraries for image pro
     - Each connected component is labeled with a unique integer label and stored in self.labeled_image
 - The properties of each connected component is computed using regionprops()
     - This returns values such as area, centroid, bounding box and moments
+    - This data is stored in the vairable self.props for use in later functions 
 - Clusters are filtered based on size, with thresholds decided by 'tminArea' and 'tmaxArea'
 - Compute the minor and major axis lengths of each remaining cluster using the inertia_tensor_eigvals property of the regionprops object. The ratio of the minor and major axes is computed as sigma_min / sigma_max (as per task brief). Clusters whose minor-to-major axis ratio is below the 'taxisRatio' threshold are filtered out.
 - A mask is created and applied to the masked image to further fine tune the clusters. 
 
 ### find_target_clusters()
-TODO
+- For each centroid of the clusters in self.props (generated in filter_clusters()), add them to a KD Tree
+    - Find the 5 nearest neightbours using the query() method 
+- For each centroid, compute the residual error of the ellipse fit
+- Check if largest residual error for the six centrois is less than a threshold value tellipse
+- Add the centroid to the target mask
+
+

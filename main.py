@@ -184,23 +184,28 @@ class MainWindow(QMainWindow):
         self.find_target_clusters()
 
     def find_target_clusters(self):
-        # Step 1: Find the five nearest clusters for each cluster
+        # Find the five nearest clusters for each cluster
         centroids = np.array([prop.centroid for prop in self.props])
         kdtree = KDTree(centroids)
         nearest_indices = kdtree.query(centroids, k=6)[1][:, 1:]
-
+        
+        # computes residual error of the ellipse fit 
         def ellipse_residual_error(params, selected_centroids):
             # Helper function to compute residual error of ellipse fitting
             x0, y0, a, b, theta = params
             t = np.linspace(0, 2 * np.pi, 100)
             ellipse_points = np.column_stack((a * np.cos(t), b * np.sin(t)))
+            # rotates ellipse points by angle theta
             rotation_matrix = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
+            # translates them to center coordinates
             ellipse_points_rotated = np.dot(ellipse_points, rotation_matrix) + np.array([x0, y0])
+            # distance matrix between rotated ellipse points and selected centroids
             dists = distance_matrix(selected_centroids, ellipse_points_rotated)
+            # compute squared distances from each centroid to the closest ellipse point
             min_dists = np.min(dists, axis=1)
             return min_dists ** 2
 
-        # Step 2: Fit an ellipse on the six centroids
+        # Fit an ellipse on the six centroids
         target_clusters = []
         for i, nearest in enumerate(nearest_indices):
             selected_centroids = np.vstack((centroids[i], centroids[nearest]))
@@ -209,15 +214,15 @@ class MainWindow(QMainWindow):
             theta = 0
             initial_params = [x0, y0, a, b, theta]
 
-            # Step 3: Compute residual error
+            # Compute residual error
             result = least_squares(ellipse_residual_error, initial_params, args=(selected_centroids,))
             residual_error = np.sum(result.fun)
 
-            # Step 4: Check if the largest residual error is less than the threshold
+            # Check if the largest residual error is less than the threshold
             if residual_error < self.tellipse:
                 target_clusters.append(i)
 
-        # Step 5: Apply a mask to the original image to display only the target clusters
+        # Apply a mask to the original image to display only the target clusters
         target_mask = np.zeros_like(self.binary_image)
         target_mask[np.isin(self.labeled_image, [self.props[i].label for i in target_clusters])] = 255
         target_image = cv2.bitwise_and(self.eigen_image, self.eigen_image, mask=target_mask)
