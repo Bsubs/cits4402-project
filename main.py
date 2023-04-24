@@ -69,7 +69,7 @@ class MainWindow(QMainWindow):
         self.tellipse_slider.setRange(0, 10)
         self.tellipse_slider.setSingleStep(0.1)
         self.cca_btn = QPushButton("Connected Components Analysis", self)
-        self.cd_btn = QPushButton("Cluster Detection", self)
+        self.cd_btn = QPushButton("Detect Hexagons", self)
         self.tellipse = 7
         # Connect widgets to update functions
         self.tellipse_slider.valueChanged.connect(self.update_tellipse)

@@ -16,6 +16,7 @@ CITS4402 Project - Joo Kai Tay (22489437), Yusi Zhang (23458522), Runtian Lian (
 - Click the 'Connected Components Analysis' Button
     - This will display the clusters which have been filtered with connected components analysis on the left hand side of the screen
     - Adjust the settings with 'tminArea', 'tmaxArea' and 'taxisRatio' to adjust the minimum area of clusters, maximum area of clusters and roundess of clusters detected
+- Click the 'Detect Hexagons' button
     - On the right side of the screen, only clusters that are part of a hexagonal target are displayed. 
         - Adjust the 'tellipse' field to adjust the sensitivity of this operation
 
