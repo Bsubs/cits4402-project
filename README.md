@@ -1,5 +1,5 @@
 # CITS4402 Project 2023
-CITS4402 Project - Joo Kai Tay (22489437), Yusi Zhang (23458522), Runtian Lian (23485011)
+CITS4402 Project - Joo Kai Tay (22489437), Yusi Zhang (23458522), Runtian Liang (23485011)
 
 ## How to launch the application
 1. Open the anaconda terminal
