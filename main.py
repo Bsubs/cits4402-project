@@ -720,7 +720,7 @@ class MainWindow(QMainWindow):
             merged_clusters = merge_clusters(clusters, distance_threshold)
 
             return merged_clusters
-
+        #use processed image to get clusters
         processed_image = self.processed_image
         
         #apply get_all_clusters to centroids computed in last step
@@ -749,6 +749,8 @@ class MainWindow(QMainWindow):
         #         cluster_image[y, x] = [255, 255, 0]
         # self.display_image(cluster_image, self.lb_label)
 
+        # use image to do alignment
+        # for the reason that the processed image used a mask to make all the colors in the cluster the same
         image = self.image.copy()
         all_clusters = self.clusters
         aligned_image = np.zeros_like(image)
