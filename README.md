@@ -4,21 +4,21 @@ CITS4402 Project - Joo Kai Tay (22489437), Yusi Zhang (23458522), Runtian Liang 
 ## How to launch the application
 1. Open the anaconda terminal
 2. Navigate to the directory where you have extracted the zip file into  
-3. Enter the command 'conda env create -f environment_cits4402_project.yml'
-4. Enter the command 'conda activate cits4402-2023' to activate the virtual environment 
-5. Enter the command 'python main.py' to run the application
+3. Enter the command `conda env create -f environment_cits4402_project.yml`
+4. Enter the command `conda activate cits4402-2023` to activate the virtual environment 
+5. Enter the command `python main.py` to run the application
 
 ## Navigating the GUI
 - Load the image in question using the 'Load Image' button
     - This will display the original image on the left side of the screen
     - This will also display a masked image where pixels of red, blue and green have been segmented
-- Use the 'tminColor' and 'tdiffColor' sliders to adjust the thresholds in the image until your desired segmenting has been achieved 
-- Click the 'Connected Components Analysis' Button
+- Use the `tminColor` and `tdiffColor` sliders to adjust the thresholds in the image until your desired segmenting has been achieved 
+- Click the `Connected Components Analysis` Button
     - This will display the clusters which have been filtered with connected components analysis on the left hand side of the screen
-    - Adjust the settings with 'tminArea', 'tmaxArea' and 'taxisRatio' to adjust the minimum area of clusters, maximum area of clusters and roundess of clusters detected
+    - Adjust the settings with `tminArea`, `tmaxArea` and `taxisRatio` to adjust the minimum area of clusters, maximum area of clusters and roundess of clusters detected
 - Click the 'Detect Hexagons' button
     - On the right side of the screen, only clusters that are part of a hexagonal target are displayed. 
-        - Adjust the 'tellipse' field to adjust the sensitivity of this operation
+        - Adjust the `tellipse` field to adjust the sensitivity of this operation
 
 ## Purpose and Design of the Application
 **Purpose**
