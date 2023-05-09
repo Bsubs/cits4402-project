@@ -57,16 +57,21 @@ class MainWindow(QMainWindow):
         self.tminArea_slider = QSlider(Qt.Horizontal)
         self.tminArea_slider.setMaximum(200)
         self.tmaxArea_slider = QSlider(Qt.Horizontal)
-        self.tmaxArea_slider.setMaximum(200)
+        self.tmaxArea_slider.setMaximum(300)
+        self.tDistance_slider = QSlider(Qt.Horizontal)
+        self.tDistance_slider.setMaximum(200)
         # Set default values for tminArea and tmaxArea
         self.tminArea = 40
         self.tmaxArea = 150
+        self.tDistance = 100
         # Connect slider widgets to update functions
         self.tminArea_slider.valueChanged.connect(self.update_tminArea)
         self.tmaxArea_slider.valueChanged.connect(self.update_tmaxArea)
+        self.tDistance_slider.valueChanged.connect(self.update_tDistance)
         # Create labels for slider widgets
         tminArea_label = QLabel("tminArea: ")
         tmaxArea_label = QLabel("tmaxArea: ")
+        tDistance_label = QLabel("tDistance: ")
 
         # Create slider widgets for taxisratio
         self.taxisRatio_slider = QDoubleSpinBox()
@@ -83,7 +88,7 @@ class MainWindow(QMainWindow):
 
         # Create slider widgets for tellipse
         self.tellipse_slider = QDoubleSpinBox()
-        self.tellipse_slider.setRange(0, 10)
+        self.tellipse_slider.setRange(0, 30)
         self.tellipse_slider.setSingleStep(0.1)
         self.cca_btn = QPushButton("Connected Components Analysis", self)
         self.cd_btn = QPushButton("Detect Hexagons", self)
@@ -99,6 +104,15 @@ class MainWindow(QMainWindow):
         # Create labels for slider widgets
         tellipse_label = QLabel("tellipse: ")
 
+        # Create labels for displaying slider values
+        self.tminColor_value_label = QLabel(str(self.tminColor))
+        self.tdiffColor_value_label = QLabel(str(self.tdiffColor))
+        self.tminArea_value_label = QLabel(str(self.tminArea))
+        self.tmaxArea_value_label = QLabel(str(self.tmaxArea))
+        self.tDistance_value_label = QLabel(str(self.tDistance))
+        self.taxisRatio_value_label = QLabel(str(self.taxisRatio))
+        self.tellipse_value_label = QLabel(str(self.tellipse))
+
         # Create layout for widgets
         layout = QVBoxLayout()
 
@@ -109,26 +123,35 @@ class MainWindow(QMainWindow):
         grid_layout.addWidget(self.load_image_btn, 0, 0, 1, 4)
         grid_layout.addWidget(tminColor_label, 1, 0)
         grid_layout.addWidget(self.tminColor_slider, 1, 1, 1, 3)
+        grid_layout.addWidget(self.tminColor_value_label, 1, 4)
         grid_layout.addWidget(tdiffColor_label, 2, 0)
         grid_layout.addWidget(self.tdiffColor_slider, 2, 1, 1, 3)
+        grid_layout.addWidget(self.tdiffColor_value_label, 2, 4)
         grid_layout.addWidget(self.original_image_label, 3, 1)
         grid_layout.addWidget(self.masked_image_label, 3, 2)
         grid_layout.addWidget(tminArea_label, 4, 0)
         grid_layout.addWidget(self.tminArea_slider, 4, 1, 1, 3)
+        grid_layout.addWidget(self.tminArea_value_label, 4, 4)
         grid_layout.addWidget(tmaxArea_label, 5, 0)
         grid_layout.addWidget(self.tmaxArea_slider, 5, 1, 1, 3)
-        grid_layout.addWidget(taxisRatio_label, 6, 0)
-        grid_layout.addWidget(self.taxisRatio_slider, 6, 1, 1, 3)
-        grid_layout.addWidget(tellipse_label, 7, 0)
-        grid_layout.addWidget(self.tellipse_slider, 7, 1, 1, 3)
-        grid_layout.addWidget(self.cca_btn, 8, 0, 1, 4)
-        grid_layout.addWidget(self.cd_btn, 9, 0, 1, 4)
-        grid_layout.addWidget(self.cca_label, 10, 1)
-        grid_layout.addWidget(self.hexagon_label, 10, 2)
-        grid_layout.addWidget(self.lb_btn, 11, 0, 1, 4)
-        grid_layout.addWidget(self.lb_label, 12, 1)
-        grid_layout.addWidget(self.align_label, 12, 2)
-        grid_layout.addWidget(self.align_btn, 13, 0, 1, 4)
+        grid_layout.addWidget(self.tmaxArea_value_label, 5, 4)
+        grid_layout.addWidget(tDistance_label, 6, 0)
+        grid_layout.addWidget(self.tDistance_slider, 6, 1, 1, 3)
+        grid_layout.addWidget(self.tDistance_value_label, 6, 4)
+        grid_layout.addWidget(taxisRatio_label, 7, 0)
+        grid_layout.addWidget(self.taxisRatio_slider, 7, 1, 1, 3)
+        grid_layout.addWidget(self.taxisRatio_value_label, 7, 4)
+        grid_layout.addWidget(tellipse_label, 8, 0)
+        grid_layout.addWidget(self.tellipse_slider, 8, 1, 1, 3)
+        grid_layout.addWidget(self.tellipse_value_label, 8, 4)
+        grid_layout.addWidget(self.cca_btn, 9, 0, 1, 4)
+        grid_layout.addWidget(self.cd_btn, 10, 0, 1, 4)
+        grid_layout.addWidget(self.cca_label, 11, 1)
+        grid_layout.addWidget(self.hexagon_label, 11, 2)
+        grid_layout.addWidget(self.lb_btn, 12, 0, 1, 4)
+        grid_layout.addWidget(self.lb_label, 13, 1)
+        grid_layout.addWidget(self.align_label, 13, 2)
+        grid_layout.addWidget(self.align_btn, 14, 0, 1, 4)
         grid_layout.setColumnStretch(2, 1)  # add stretch to the empty cell
 
         # Add grid layout to main layout
@@ -162,11 +185,13 @@ class MainWindow(QMainWindow):
         )
         if file_name:
             self.original_image = cv2.imread(file_name)
+
             self.display_image(self.original_image, self.original_image_label)
             # Generate initial segmentation mask
             self.generate_mask()
 
     def display_image(self, img, label):
+
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         qimg = QImage(
             img.data, img.shape[1], img.shape[0], img.strides[0], QImage.Format_RGB888
@@ -176,6 +201,7 @@ class MainWindow(QMainWindow):
         label.setScaledContents(True)
 
     def generate_mask(self):
+
         # Compute minimum and maximum intensities for each pixel
         min_intensities = np.min(self.original_image, axis=2)
         max_intensities = np.max(self.original_image, axis=2)
@@ -208,6 +234,9 @@ class MainWindow(QMainWindow):
 
         # Filter out small and large clusters based on area thresholds
         cluster_mask = np.zeros_like(self.binary_image)
+        centroids = []
+        valid_props = []
+
         for prop in self.props:
             if self.tminArea <= prop.area <= self.tmaxArea:
                 # Compute minor and major axis lengths and their ratio
@@ -216,7 +245,18 @@ class MainWindow(QMainWindow):
 
                 # Filter out clusters with minor-to-major axis ratio below threshold
                 if ratio < self.taxisRatio:
-                    cluster_mask[self.labeled_image == prop.label] = 255
+                    centroids.append(prop.centroid)
+                    valid_props.append(prop)
+
+        # Compute pairwise distances between cluster centroids
+        centroids = np.array(centroids)
+        distances = distance_matrix(centroids, centroids)
+
+        # Filter out clusters with distance to the nearest cluster greater than the threshold
+        for i, prop in enumerate(valid_props):
+            min_distance = np.min(distances[i, [j for j in range(len(distances)) if i != j]])
+            if min_distance <= self.tDistance:
+                cluster_mask[self.labeled_image == prop.label] = 255
 
         # Apply mask to original image
         self.eigen_image = cv2.bitwise_and(
@@ -823,33 +863,38 @@ class MainWindow(QMainWindow):
         aligned_image = aligned_image.astype(np.uint8)
         self.display_image(aligned_image, self.align_label)
 
-    # Functions for sliders
-
+    # Slider value update functions
     def update_tminColor(self, value):
-        # Update tminColor value
         self.tminColor = value
-
+        self.tminColor_value_label.setText(str(value))
         # Regenerate segmentation mask
         self.generate_mask()
 
     def update_tdiffColor(self, value):
-        # Update tdiffColor value
         self.tdiffColor = value
-
+        self.tdiffColor_value_label.setText(str(value))
         # Regenerate segmentation mask
         self.generate_mask()
 
     def update_tminArea(self, value):
         self.tminArea = value
+        self.tminArea_value_label.setText(str(value))
 
     def update_tmaxArea(self, value):
         self.tmaxArea = value
+        self.tmaxArea_value_label.setText(str(value))
+    
+    def update_tDistance(self, value):
+            self.tDistance = value
+            self.tDistance_value_label.setText(str(value))
 
     def update_taxisRatio(self, value):
         self.taxisRatio = value
+        self.taxisRatio_value_label.setText(str(value))
 
     def update_tellipse(self, value):
         self.tellipse = value
+        self.tellipse_value_label.setText(str(value))
 
 
 def main():

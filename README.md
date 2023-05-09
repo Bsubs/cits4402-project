@@ -54,3 +54,64 @@ The project was implemented in Python using a variety of libraries for image pro
 - Add the centroid to the target mask
 
 
+## Tuning Hyperparameters
+
+### Camera 11 RGB Left
+
+- tminColor:   50
+- tdiffColor:  100
+- tminArea:    40
+- tmaxArea:    150
+- tDistance:   100
+- taxisRatio:  2.5
+- tellipse:    7
+
+### Camera 11 RGB Right
+
+- tminColor:   56
+- tdiffColor:  75
+- tminArea:    40
+- tmaxArea:    116
+- tDistance:   27
+- taxisRatio:  2.5
+- tellipse:    7
+
+### Camera 71 RGB 
+This one needs fixing.
+
+- tminColor:   99
+- tdiffColor:  17
+- tminArea:    13
+- tmaxArea:    111
+- taxisRatio:  1.8
+- tellipse:    7
+
+### Camera 72 RGB 
+
+- tminColor:   80
+- tdiffColor:  99
+- tminArea:    6
+- tmaxArea:    53
+- tDistance:   20
+- taxisRatio:  2.3
+- tellipse:    7
+
+### Camera 73 RGB 
+
+- tminColor:   99
+- tdiffColor:  99
+- tminArea:    6
+- tmaxArea:    92
+- tDistance:   100
+- taxisRatio:  2.2
+- tellipse:    4
+
+### Camera 74 RGB 
+
+- tminColor:   65
+- tdiffColor:  40
+- tminArea:    20
+- tmaxArea:    200
+- tDistance:   23
+- taxisRatio:  1.4
+- tellipse:    30
