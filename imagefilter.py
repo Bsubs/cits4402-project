@@ -45,6 +45,7 @@ class MaskImage (QtWidgets.QWidget):
         self.tDistance = param_dict.get('tDistance')
         self.taxisRatio = param_dict.get('taxisRatio')
         self.tellipse = param_dict.get('tellipse')
+        self.distance_threshold=1
 
 
         # Creates the widgets for colour thresholding
@@ -89,6 +90,13 @@ class MaskImage (QtWidgets.QWidget):
         self.taxisRatio_value_label = QLabel(str(self.taxisRatio))
         self.cca_btn = QPushButton("Connected Components Analysis", self)
         self.cca_btn.clicked.connect(self.filter_clusters)
+        # distance_threshold_label = QLabel("Distance Threshold: ")
+        # self.distance_threshold_slider = QSlider(Qt.Horizontal)
+        # self.distance_threshold_slider.setMinimum(1)  # 设置最小值为1
+        # self.distance_threshold_slider.setMaximum(10)  # 设置最大值为10
+        # self.distance_threshold_slider.valueChanged.connect(self.update_distance_threshold)
+        # self.distance_threshold_value_label = QLabel(str(self.distance_threshold))
+
         # Creates the label to display the cca image
         self.cca_label = QLabel(self)
 
@@ -149,7 +157,10 @@ class MaskImage (QtWidgets.QWidget):
         self.grid_layout.addWidget(self.lb_btn, 12, 0, 1, 4)
         self.grid_layout.addWidget(self.lb_label, 13, 1)
         self.grid_layout.addWidget(self.align_label, 13, 2)
-        self.grid_layout.addWidget(self.align_btn, 14, 0, 1, 4)
+        # self.grid_layout.addWidget(distance_threshold_label, 14, 0)
+        # self.grid_layout.addWidget(self.distance_threshold_slider, 14, 1,1,3)
+        self.grid_layout.addWidget(self.align_btn, 15, 0, 1, 4)
+        
         self.grid_layout.setColumnStretch(2, 1)  # add stretch to the empty cell
 
 
@@ -666,9 +677,9 @@ class MaskImage (QtWidgets.QWidget):
         self.display_image(marked_image, self.lb_label)
 
     def align_clusters(self):
-        # Get a cluster of points around the given centroid within a specified distance threshold.
-        def get_cluster(centroid, image, color, distance_threshold):
+        def get_cluster(centroid, image, color, distance_threshold, assigned_pixels):
             cluster = []
+            cluster.append(centroid)
             height, width, _ = image.shape
             y, x = centroid
             centroid_color = image[y, x]
@@ -677,101 +688,56 @@ class MaskImage (QtWidgets.QWidget):
                 for dx in range(-distance_threshold, distance_threshold + 1):
                     if dy == 0 and dx == 0:
                         continue
-
                     new_y = y + dy
                     new_x = x + dx
                     # Check if the new coordinates are within the image bounds
                     if 0 <= new_y < height and 0 <= new_x < width:
                         pixel = image[new_y, new_x]
-                        # Check if the pixel matches the target color and the centroid color.
-                        if np.all(pixel == color) and np.all(pixel == centroid_color):
+                        # Check if the pixel matches the target color and the centroid color,
+                        # and if it has not been assigned to a cluster yet
+                        if np.all(pixel == color) and np.all(pixel == centroid_color) and not assigned_pixels[new_y, new_x]:
                             distance = np.sqrt(dy**2 + dx**2)
                             # Include the point in the cluster if the distance is within the threshold.
                             if distance <= distance_threshold:
                                 cluster.append((new_y, new_x))
+                                assigned_pixels[new_y, new_x] = True
 
             return cluster
 
-        # Merge clusters that have points within a specified distance threshold.
-        def merge_clusters(clusters, distance_threshold):
-            merged_clusters = []
-            unmerged_clusters = list(clusters)
-            # Iterate through the unmerged clusters
-            while unmerged_clusters:
-                current_cluster = unmerged_clusters.pop(0)
-                merged = False
-                # Compare the current cluster with other clusters
-                for other_cluster in unmerged_clusters:
-                    # Check the distance between all pairs of points from the two clusters.
-                    for pixel1 in current_cluster:
-                        for pixel2 in other_cluster:
-                            distance = np.linalg.norm(
-                                np.array(pixel1) - np.array(pixel2))
-                            # Check the distance between all pairs of points from the two clusters.
-                            if distance <= distance_threshold:
-                                current_cluster.extend(other_cluster)
-                                unmerged_clusters.remove(other_cluster)
-                                merged = True
-                                break
-
-                        if merged:
-                            break
-
-                    if merged:
-                        break
-                # If the cluster is not merged, add it to the final list of merged clusters.
-                if not merged:
-                    merged_clusters.append(current_cluster)
-
-            return merged_clusters
-        
-        # Get all clusters for the given centroids, image, color, and distance threshold.
-        def get_all_clusters(centroids, image, color, distance_threshold):
+        def get_all_clusters(centroids, image, color, min_distance_threshold, max_distance_threshold):
             clusters = []
+            height, width, _ = image.shape
+            assigned_pixels = np.zeros((height, width), dtype=bool)
             # Iterate through the centroids and get clusters for each centroid.
             for centroid in centroids:
-                y, x = centroid
-                swapped_centroid = (x, y)
-                cluster = get_cluster(
-                    swapped_centroid, image, color, distance_threshold)
-                clusters.append(cluster)
-            # Merge clusters that are close to each other.
-            merged_clusters = merge_clusters(clusters, distance_threshold)
-
-            return merged_clusters
+                for distance_threshold in range(max_distance_threshold, min_distance_threshold - 1, -1):
+                    y, x = centroid
+                    swapped_centroid = (x, y)
+                    cluster = get_cluster(
+                        swapped_centroid, image, color, distance_threshold, assigned_pixels)
+                    if cluster:
+                        clusters.append(cluster)
+                        break
+            return clusters
         #use processed image to get clusters
         processed_image = self.processed_image
         
-        #apply get_all_clusters to centroids computed in last step
+        min_distance_threshold = 1
+        max_distance_threshold = 6
         blue_clusters = get_all_clusters(
-            self.blue_centroids, processed_image, np.array([255, 0, 0]), 5)
+            self.blue_centroids, processed_image, np.array([255, 0, 0]), min_distance_threshold, max_distance_threshold)
         red_clusters = get_all_clusters(
-            self.red_centroids, processed_image, np.array([0, 0, 255]), 5)
+            self.red_centroids, processed_image, np.array([0, 0, 255]), min_distance_threshold, max_distance_threshold)
         green_clusters = get_all_clusters(
-            self.green_centroids, processed_image, np.array([0, 255, 0]), 5)
+            self.green_centroids, processed_image, np.array([0, 255, 0]), min_distance_threshold, max_distance_threshold)
         #get all clusters
         all_clusters = blue_clusters + red_clusters + green_clusters
         self.clusters = all_clusters
-
-        # def check_all_points_assigned(image, clusters):
-        #     image = np.array(image)  # Convert image to NumPy array if it's a list
-        #     all_points = set(tuple(point) for point in np.ndindex(image.shape[:2]))
-        #     for cluster in clusters:
-        #         for point in cluster:
-        #             all_points.discard(tuple(point))
-        #     return not all_points
-        # print('all?',check_all_points_assigned(all_clusters,processed_image))
-        # cluster_image = np.copy(processed_image)
-        # for i, cluster in enumerate(all_clusters):
-        #     for point in cluster:
-        #         y, x = point
-        #         cluster_image[y, x] = [255, 255, 0]
-        # self.display_image(cluster_image, self.lb_label)
+        print(len(self.clusters))
 
         # use image to do alignment
         # for the reason that the processed image used a mask to make all the colors in the cluster the same
         image = self.image.copy()
-        all_clusters = self.clusters
         aligned_image = np.zeros_like(image)
         
         # Calculate the weight of a point based on its color distance from the average color
@@ -824,11 +790,9 @@ class MaskImage (QtWidgets.QWidget):
                 new_x = np.clip(new_x, 0, image.shape[1] - 1)
                 new_y = np.clip(new_y, 0, image.shape[0] - 1)
                 # Assign the pixel value from the original image to the aligned_image
-                if np.all(aligned_image[new_y, new_x] == [0, 0, 0]):
+                if np.all(aligned_image[new_y, new_x] == [0, 0, 0]) or np.linalg.norm(image[y, x]) > np.linalg.norm(aligned_image[new_y, new_x]):
                     aligned_image[new_y, new_x] = image[y, x]
-                else:
-                    aligned_image[new_y, new_x] = (
-                        aligned_image[new_y, new_x] + image[y, x]) // 2
+
                     
         # Set the color of the centroids in the aligned_image
         for centroid in aligned_centroids:
@@ -874,4 +838,8 @@ class MaskImage (QtWidgets.QWidget):
     def update_tellipse(self, value):
         self.tellipse = value
         self.tellipse_value_label.setText(str(value))
-        
+    
+    # def update_distance_threshold(self, value):
+    #     self.distance_threshold = value
+    #     self.distance_threshold_value_label.setText(str(value))
+
