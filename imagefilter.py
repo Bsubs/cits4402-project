@@ -27,8 +27,25 @@ from PIL import Image
 
 class MaskImage (QtWidgets.QWidget):
       
-    def __init__(self, *args, **kwargs):
+    def __init__(self, param_dict, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        # Tuned hyperparameters for each image
+        # self.tminColor = 50
+        # self.tdiffColor = 100
+        # self.tminArea = 40        
+        # self.tmaxArea = 150
+        # self.tDistance = 100
+        # self.taxisRatio = 2.5
+        # self.tellipse = 7
+        self.tminColor = param_dict.get('tminColor')
+        self.tdiffColor = param_dict.get('tdiffColor')
+        self.tminArea = param_dict.get('tminArea')     
+        self.tmaxArea = param_dict.get('tmaxArea')
+        self.tDistance = param_dict.get('tDistance')
+        self.taxisRatio = param_dict.get('taxisRatio')
+        self.tellipse = param_dict.get('tellipse')
+
 
         # Creates the widgets for colour thresholding
         # Create load image widget & label
@@ -37,12 +54,10 @@ class MaskImage (QtWidgets.QWidget):
         self.original_image_label = QLabel(self)
         # Creates the widgets for tminColor and tdiffColor (label, slider, value label)
         self.tminColor_slider = QSlider(Qt.Horizontal)
-        self.tminColor = 50
         self.tminColor_slider.valueChanged.connect(self.update_tminColor)
         self.tminColor_value_label = QLabel(str(self.tminColor))
         self.tdiffColor_slider = QSlider(Qt.Horizontal)
         tminColor_label = QLabel("tminColor: ")
-        self.tdiffColor = 100
         self.tdiffColor_slider.valueChanged.connect(self.update_tdiffColor)
         tdiffColor_label = QLabel("tdiffColor: ")
         self.tdiffColor_value_label = QLabel(str(self.tdiffColor))
@@ -54,19 +69,16 @@ class MaskImage (QtWidgets.QWidget):
         tminArea_label = QLabel("tminArea: ")
         self.tminArea_slider = QSlider(Qt.Horizontal)
         self.tminArea_slider.setMaximum(200)
-        self.tminArea = 40        
         tmaxArea_label = QLabel("tmaxArea: ")
         self.tminArea_slider.valueChanged.connect(self.update_tminArea)
         self.tminArea_value_label = QLabel(str(self.tminArea))
         self.tmaxArea_slider = QSlider(Qt.Horizontal)
-        self.tmaxArea = 150
         self.tmaxArea_slider.setMaximum(300)
         self.tmaxArea_slider.valueChanged.connect(self.update_tmaxArea)
         self.tmaxArea_value_label = QLabel(str(self.tmaxArea))
         tDistance_label = QLabel("tDistance: ")
         self.tDistance_slider = QSlider(Qt.Horizontal)
         self.tDistance_slider.setMaximum(200)
-        self.tDistance = 100
         self.tDistance_slider.valueChanged.connect(self.update_tDistance)
         self.tDistance_value_label = QLabel(str(self.tDistance))
         self.taxisRatio_slider = QDoubleSpinBox()
@@ -74,7 +86,6 @@ class MaskImage (QtWidgets.QWidget):
         self.taxisRatio_slider.setSingleStep(0.1)
         self.taxisRatio_slider.valueChanged.connect(self.update_taxisRatio)
         taxisRatio_label = QLabel("taxisRatio: ")
-        self.taxisRatio = 2.5
         self.taxisRatio_value_label = QLabel(str(self.taxisRatio))
         self.cca_btn = QPushButton("Connected Components Analysis", self)
         self.cca_btn.clicked.connect(self.filter_clusters)
@@ -87,7 +98,6 @@ class MaskImage (QtWidgets.QWidget):
         self.tellipse_slider.setRange(0, 30)
         self.tellipse_slider.setSingleStep(0.1)
         self.hexagon_label = QLabel(self)
-        self.tellipse = 7
         self.tellipse_slider.valueChanged.connect(self.update_tellipse)
         tellipse_label = QLabel("tellipse: ")
         self.tellipse_value_label = QLabel(str(self.tellipse))

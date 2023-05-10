@@ -1,4 +1,5 @@
 import sys
+import json
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtWidgets import (
@@ -8,6 +9,7 @@ from PyQt5.QtWidgets import (
     QWidget,
     QGridLayout,
     QScrollArea,
+    QTabWidget,
 )
 from PyQt5 import QtWidgets
 from PyQt5 import QtCore
@@ -25,17 +27,27 @@ class MainWindow(QMainWindow):
         # Create layout for widgets
         layout = QVBoxLayout()
 
-        # Create grid layout
-        grid_layout = QGridLayout()
+        # Create tab widget
+        self.tab_widget = QTabWidget()
+        layout.addWidget(self.tab_widget)
 
-        # Add grid layout to main layout
-        layout.addLayout(grid_layout)
+        # Read data from file and create tabs
+        with open('tuned_hyperparameters.json', 'r') as f:
+            data = json.load(f)
+        for name, params in data.items():
+            tab = QWidget()
+            tab_layout = QVBoxLayout()
+            widget = MaskImage(param_dict=params)
+            tab_layout.addWidget(widget)
+            tab.setLayout(tab_layout)
+            self.tab_widget.addTab(tab, name)
 
         # Create central widget and set layout
-        self.scroll = QScrollArea()
         central_widget = QWidget()
         central_widget.setLayout(layout)
 
+        # Create scroll area
+        self.scroll = QScrollArea()
         self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.scroll.setWidgetResizable(True)
@@ -47,9 +59,6 @@ class MainWindow(QMainWindow):
         # Set window properties
         self.setWindowTitle("Image Segmentation")
         self.resize(800, 600)
-
-        self.widget_1 = MaskImage()
-        grid_layout.addWidget(self.widget_1)
 
 
 def main():
