@@ -102,7 +102,7 @@ This one needs fixing.
 - tdiffColor:  99
 - tminArea:    6
 - tmaxArea:    92
-- tDistance:   100
+- tDistance:   20
 - taxisRatio:  2.2
 - tellipse:    4
 
