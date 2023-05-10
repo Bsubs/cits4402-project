@@ -41,6 +41,12 @@ class MainWindow(QMainWindow):
             tab_layout.addWidget(widget)
             tab.setLayout(tab_layout)
             self.tab_widget.addTab(tab, name)
+        
+        # Create the tab for 3D rendering
+        tab = QWidget()
+        tab_layout = QVBoxLayout()
+        tab.setLayout(tab_layout)
+        self.tab_widget.addTab(tab, '3D Render of Room')
 
         # Create central widget and set layout
         central_widget = QWidget()
