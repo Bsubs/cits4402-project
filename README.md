@@ -53,6 +53,16 @@ The project was implemented in Python using a variety of libraries for image pro
 - Check if largest residual error for the six centrois is less than a threshold value tellipse
 - Add the centroid to the target mask
 
+### align_clusters()
+- Use centriods in find_target_lable() to get all the clusters for each color with the get_all_clusters() function.
+- Calculate the weighted centroid for each cluster using the weighted_centroid() function.
+- Compute the offset between the weighted centroid and original centroid for each cluster.
+- Calculate the aligned centroid by adding the offset to the original centroid.
+- Move the points in the cluster based on the calculated offset.
+- Set the color of the centroids in the aligned image.
+- Convert the aligned image back to the original image type (e.g., uint8).
+- Display the aligned image using the display_image() function.
+
 
 ## Tuning Hyperparameters
 
