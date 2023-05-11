@@ -53,6 +53,25 @@ The project was implemented in Python using a variety of libraries for image pro
 - Check if largest residual error for the six centrois is less than a threshold value tellipse
 - Add the centroid to the target mask
 
+### find_target_label()
+- Color Temperature Compensation: This function applies color temperature compensation to the image. This implies that the function corrects the colors in the image to match the colors in the original scene, helping to eliminate color cast caused by different light sources.
+
+- Reference Colors Identification: The function identifies red, green, and blue as the reference colors in the image.
+
+- Pixel Color Analysis: For every pixel in the image, this function determines the closest reference color and applies color temperature compensation to it. If the color component is greater than a set threshold, the color is assigned to the pixel.
+
+- Image Processing: The function processes the image by setting certain pixels to black based on defined conditions.
+
+- HSV Conversion and Masking: The function then converts the processed image to HSV color space and applies masks for blue, red, and green colors.
+
+- Contours and Centroids Calculation: For each color mask, the function calculates contours and their centroids.
+
+- Clustering: The function then clusters these centroids and sorts them from left to right.
+
+- Sorting Points Clockwise: The function sorts points in each cluster clockwise, starting from the blue point.
+
+- Label Assignment: Finally, the function assigns labels to each point in the cluster, based on their position and color.
+
 ### align_clusters()
 - Use centriods in find_target_lable() to get all the clusters for each color with the get_all_clusters() function.
 - Calculate the weighted centroid for each cluster using the weighted_centroid() function.
