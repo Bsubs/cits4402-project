@@ -818,15 +818,17 @@ class MaskImage (QtWidgets.QWidget):
 
     def distortion(self):
         
-        # 相机内参矩阵
+        # Camera internal parameter matrix[fx  0  cx]
+                                         #[0  fy  cy]
+                                         #[0   0   1]
         camera_matrix = np.array([[420, 0, 424],
                                   [0, 420, 240],
                                   [0, 0, 1]])
         
-        # 畸变系数(ok1, ok2, ok3, op1, op2)
+        # distortion coefficients(ok1, ok2, ok3, op1, op2)
         distortion_coefficients = np.array([0.14313173294067383, -0.4348469376564026, 0.3693040907382965, -0.00025131707661785185, -0.001663277973420918])
     
-        # 去除畸变
+        # remove distortion
         undistorted_img = cv2.undistort(self.newimage, camera_matrix, distortion_coefficients)
         self.display_image(undistorted_img, self.distortion_label)
         return TRUE
