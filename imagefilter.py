@@ -1,3 +1,4 @@
+from pickle import TRUE
 from PyQt5 import QtWidgets
 import sys
 from PyQt5.QtCore import Qt
@@ -116,10 +117,13 @@ class MaskImage (QtWidgets.QWidget):
         # Creates the widgets for labeling and alignment
         self.lb_label = QLabel(self)
         self.align_label = QLabel(self)
+        self.distortion_label = QLabel(self)
         self.lb_btn = QPushButton("labling", self)
         self.align_btn = QPushButton("alignment", self)
+        self.distortion_btn = QPushButton("distortion", self)
         self.lb_btn.clicked.connect(self.find_target_lable)
         self.align_btn.clicked.connect(self.align_clusters)
+        self.distortion_btn.clicked.connect(self.distortion)
 
         # Create grid layout
         self.grid_layout = QGridLayout()
@@ -160,6 +164,8 @@ class MaskImage (QtWidgets.QWidget):
         # self.grid_layout.addWidget(distance_threshold_label, 14, 0)
         # self.grid_layout.addWidget(self.distance_threshold_slider, 14, 1,1,3)
         self.grid_layout.addWidget(self.align_btn, 15, 0, 1, 4)
+        self.grid_layout.addWidget(self.distortion_btn, 16, 0, 1, 4)
+        self.grid_layout.addWidget(self.distortion_label, 17, 1)
         
         self.grid_layout.setColumnStretch(2, 1)  # add stretch to the empty cell
 
@@ -802,9 +808,28 @@ class MaskImage (QtWidgets.QWidget):
             centroid_color = image[new_y, new_x]
             aligned_image[new_y, new_x] = centroid_color
 
+    
+
         # Convert the aligned_image back to the original image type (e.g., uint8)
         aligned_image = aligned_image.astype(np.uint8)
         self.display_image(aligned_image, self.align_label)
+
+        self.newimage = aligned_image
+
+    def distortion(self):
+        
+        # 相机内参矩阵
+        camera_matrix = np.array([[420, 0, 424],
+                                  [0, 420, 240],
+                                  [0, 0, 1]])
+        
+        # 畸变系数(ok1, ok2, ok3, op1, op2)
+        distortion_coefficients = np.array([0.14313173294067383, -0.4348469376564026, 0.3693040907382965, -0.00025131707661785185, -0.001663277973420918])
+    
+        # 去除畸变
+        undistorted_img = cv2.undistort(self.newimage, camera_matrix, distortion_coefficients)
+        self.display_image(undistorted_img, self.distortion_label)
+        return TRUE
 
     # Slider value update functions
     def update_tminColor(self, value):
