@@ -91,12 +91,7 @@ class MaskImage (QtWidgets.QWidget):
         self.taxisRatio_value_label = QLabel(str(self.taxisRatio))
         self.cca_btn = QPushButton("Connected Components Analysis", self)
         self.cca_btn.clicked.connect(self.filter_clusters)
-        # distance_threshold_label = QLabel("Distance Threshold: ")
-        # self.distance_threshold_slider = QSlider(Qt.Horizontal)
-        # self.distance_threshold_slider.setMinimum(1)  # 设置最小值为1
-        # self.distance_threshold_slider.setMaximum(10)  # 设置最大值为10
-        # self.distance_threshold_slider.valueChanged.connect(self.update_distance_threshold)
-        # self.distance_threshold_value_label = QLabel(str(self.distance_threshold))
+
 
         # Creates the label to display the cca image
         self.cca_label = QLabel(self)
@@ -118,13 +113,15 @@ class MaskImage (QtWidgets.QWidget):
         self.lb_label = QLabel(self)
         self.align_label = QLabel(self)
         self.distortion_label = QLabel(self)
+        self.get3D_label=QLabel(self)
         self.lb_btn = QPushButton("labling", self)
         self.align_btn = QPushButton("alignment", self)
         self.distortion_btn = QPushButton("distortion", self)
+        self.get3D_btn = QPushButton("get3D", self)
         self.lb_btn.clicked.connect(self.find_target_lable)
         self.align_btn.clicked.connect(self.align_clusters)
         self.distortion_btn.clicked.connect(self.distortion)
-
+        self.get3D_btn.clicked.connect(self.get3D)
         # Create grid layout
         self.grid_layout = QGridLayout()
         self.setLayout(self.grid_layout)
@@ -166,7 +163,8 @@ class MaskImage (QtWidgets.QWidget):
         self.grid_layout.addWidget(self.align_btn, 15, 0, 1, 4)
         self.grid_layout.addWidget(self.distortion_btn, 16, 0, 1, 4)
         self.grid_layout.addWidget(self.distortion_label, 17, 1)
-        
+        self.grid_layout.addWidget(self.get3D_label, 17, 2)
+        self.grid_layout.addWidget(self.get3D_btn, 18, 0, 1, 4)
         self.grid_layout.setColumnStretch(2, 1)  # add stretch to the empty cell
 
 
@@ -624,6 +622,7 @@ class MaskImage (QtWidgets.QWidget):
 
         sorted_clusters_clockwise = sort_clusters_clockwise(
             clusters, blue_rects)
+        self.sorted_cluster=sorted_clusters_clockwise
 
         for cluster in sorted_clusters_clockwise:
             blue_rect = cluster[0]  # extract blue point
@@ -683,7 +682,7 @@ class MaskImage (QtWidgets.QWidget):
         self.display_image(marked_image, self.lb_label)
 
     def align_clusters(self):
-        def get_cluster(centroid, image, color, distance_threshold, assigned_pixels):
+        def get_cluster(centroid, image,color, distance_threshold, assigned_pixels):
             cluster = []
             cluster.append(centroid)
             height, width, _ = image.shape
@@ -710,12 +709,12 @@ class MaskImage (QtWidgets.QWidget):
 
             return cluster
 
-        def get_all_clusters(centroids, image, color, min_distance_threshold, max_distance_threshold):
+        def get_all_clusters(centroids, image,color,min_distance_threshold, max_distance_threshold):
             clusters = []
             height, width, _ = image.shape
             assigned_pixels = np.zeros((height, width), dtype=bool)
             # Iterate through the centroids and get clusters for each centroid.
-            for centroid in centroids:
+            for centroid in centroids: 
                 for distance_threshold in range(max_distance_threshold, min_distance_threshold - 1, -1):
                     y, x = centroid
                     swapped_centroid = (x, y)
@@ -727,7 +726,6 @@ class MaskImage (QtWidgets.QWidget):
             return clusters
         #use processed image to get clusters
         processed_image = self.processed_image
-        
         min_distance_threshold = 1
         max_distance_threshold = 6
         blue_clusters = get_all_clusters(
@@ -739,7 +737,6 @@ class MaskImage (QtWidgets.QWidget):
         #get all clusters
         all_clusters = blue_clusters + red_clusters + green_clusters
         self.clusters = all_clusters
-        print(len(self.clusters))
 
         # use image to do alignment
         # for the reason that the processed image used a mask to make all the colors in the cluster the same
@@ -807,9 +804,21 @@ class MaskImage (QtWidgets.QWidget):
             new_y = np.clip(new_y, 0, image.shape[0] - 1)
             centroid_color = image[new_y, new_x]
             aligned_image[new_y, new_x] = centroid_color
+        # Use the function to sort aligned_centroids
+        aligned_centroids = [np.array([point[1], point[0]]) for point in aligned_centroids]
+        aligned_centroids_sorted = sorted(aligned_centroids, key=lambda point: point[0])
+        print(aligned_centroids_sorted)
+        print(self.sorted_cluster)
+        # calculate distance 
+        def distance(point1, point2):
+            return np.sqrt((point1[0] - point2[0])**2 + (point1[1] - point2[1])**2)
 
-    
-
+        # update the center points in sorted cluster
+        for cluster in self.sorted_cluster:
+            for point in cluster:
+                closest_point = min(aligned_centroids_sorted, key=lambda centroid: distance(centroid, point['center']))
+                point['center'] = tuple(closest_point)
+        print(self.sorted_cluster)
         # Convert the aligned_image back to the original image type (e.g., uint8)
         aligned_image = aligned_image.astype(np.uint8)
         self.display_image(aligned_image, self.align_label)
@@ -833,6 +842,9 @@ class MaskImage (QtWidgets.QWidget):
         self.display_image(undistorted_img, self.distortion_label)
         return TRUE
 
+    def get3D(self):
+        print(self.sorted_cluster)
+    
     # Slider value update functions
     def update_tminColor(self, value):
         self.tminColor = value
