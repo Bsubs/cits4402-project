@@ -25,6 +25,10 @@ from scipy.optimize import least_squares
 from sklearn.cluster import KMeans
 from collections import defaultdict
 from PIL import Image
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+import io
+
 
 class MaskImage (QtWidgets.QWidget):
       
@@ -803,22 +807,19 @@ class MaskImage (QtWidgets.QWidget):
             new_x = np.clip(new_x, 0, image.shape[1] - 1)
             new_y = np.clip(new_y, 0, image.shape[0] - 1)
             centroid_color = image[new_y, new_x]
-            aligned_image[new_y, new_x] = centroid_color
+            #aligned_image[new_y, new_x] = centroid_color
+            aligned_image[new_y, new_x] = [255, 255, 255]
         # Use the function to sort aligned_centroids
         aligned_centroids = [np.array([point[1], point[0]]) for point in aligned_centroids]
         aligned_centroids_sorted = sorted(aligned_centroids, key=lambda point: point[0])
-        print(aligned_centroids_sorted)
-        print(self.sorted_cluster)
         # calculate distance 
         def distance(point1, point2):
             return np.sqrt((point1[0] - point2[0])**2 + (point1[1] - point2[1])**2)
-
         # update the center points in sorted cluster
         for cluster in self.sorted_cluster:
             for point in cluster:
                 closest_point = min(aligned_centroids_sorted, key=lambda centroid: distance(centroid, point['center']))
                 point['center'] = tuple(closest_point)
-        print(self.sorted_cluster)
         # Convert the aligned_image back to the original image type (e.g., uint8)
         aligned_image = aligned_image.astype(np.uint8)
         self.display_image(aligned_image, self.align_label)
@@ -830,20 +831,105 @@ class MaskImage (QtWidgets.QWidget):
         # Camera internal parameter matrix[fx  0  cx]
                                          #[0  fy  cy]
                                          #[0   0   1]
-        camera_matrix = np.array([[420, 0, 424],
-                                  [0, 420, 240],
-                                  [0, 0, 1]])
+        self.camera_matrix = np.array([[420, 0, 424],
+                                       [0, 420, 240],
+                                       [0, 0, 1]])
         
         # distortion coefficients(ok1, ok2, ok3, op1, op2)
-        distortion_coefficients = np.array([0.14313173294067383, -0.4348469376564026, 0.3693040907382965, -0.00025131707661785185, -0.001663277973420918])
+        self.distortion_coefficients = np.zeros((4, 1))
     
         # remove distortion
-        undistorted_img = cv2.undistort(self.newimage, camera_matrix, distortion_coefficients)
+        undistorted_img = cv2.undistort(self.newimage, self.camera_matrix, self.distortion_coefficients)
         self.display_image(undistorted_img, self.distortion_label)
         return TRUE
 
     def get3D(self):
-        print(self.sorted_cluster)
+        # real-world 2d coordinates from the email
+        real_world_coordinates = np.array([
+            [0, 90.01599884033203],
+            [77.95613861083984, 45.007999420166016],
+            [77.95613861083984, -45.007999420166016],
+            [0, -90.01599884033203],
+            [-77.95613861083984, -45.007999420166016],
+            [-77.95613861083984, 45.007999420166016]
+        ])
+
+        # use focal f for camera72 here
+        f = 420
+        real_world_center = np.mean(real_world_coordinates, axis=0)
+        real_world_size = np.linalg.norm(real_world_center - real_world_coordinates[1])
+        depth_info = []
+        for hexagon in self.sorted_cluster:
+            hexagon_info = {hexagon[0]['label']: []}
+            # get center coordinate for each hexagon
+            center_coordinates = np.mean([[vertex['center'][0], vertex['center'][1]] for vertex in hexagon], axis=0)
+            for vertex in hexagon:
+                # get vertex coordinates
+                image_coordinates = np.array([vertex['center'][0], vertex['center'][1]])
+                # calculate image size
+                image_size = np.linalg.norm(center_coordinates - image_coordinates)
+                # calculate depth
+                depth = f * real_world_size / image_size
+                hexagon_info[hexagon[0]['label']].append({'x': vertex['center'][0], 'y': vertex['center'][1], 'z': depth})
+            depth_info.append(hexagon_info)
+        print(depth_info)
+        # All observed rotation and translation vectors
+        all_rvecs, all_tvecs = [], []
+
+        # Calculate rotation and translation vectors for every target
+        for target_dict in depth_info:
+            for target, points in target_dict.items():
+                object_points = np.array([[p['x'], p['y'], p['z']] for p in points])
+                image_points = np.array([[p['x'], p['y']] for p in points])
+                image_points = image_points.astype(np.float32)
+                _, rvecs, tvecs = cv2.solvePnP(object_points, 
+                                               image_points, 
+                                               self.camera_matrix, 
+                                               self.distortion_coefficients)
+                all_rvecs.append(rvecs)
+                all_tvecs.append(tvecs)
+
+
+       # Average rotation and translation vectors
+        mean_rvecs = np.mean(all_rvecs, axis=0)
+        mean_tvecs = np.mean(all_tvecs, axis=0)
+
+        # Create 3D plot
+        fig = plt.figure(figsize=(10, 10))
+        ax = fig.add_subplot(111, projection='3d')
+
+        for target_dict in depth_info:
+            for target, points in target_dict.items():
+                for point in points:
+                    x = point['x']
+                    y = point['y']
+                    z = point['z']
+                    ax.scatter(x, y, z, label=target, color='black', s=20)
+
+        # Calculate and plot camera position
+        camera_position = -np.linalg.inv(cv2.Rodrigues(mean_rvecs)[0]).dot(mean_tvecs)
+        print(camera_position)
+        ax.scatter(*camera_position, label='Camera', color='r')
+
+        # Calculate and plot camera direction
+        R, _ = cv2.Rodrigues(mean_rvecs)
+        camera_direction = R.dot(np.array([[0], [0], [-1]]))
+        ax.quiver(*camera_position, *camera_direction, color='r')
+        # Set 3D range
+        max_range = np.max([np.abs(depth['x']) for depth_dict in depth_info for depth_list in depth_dict.values() for depth in depth_list])
+        ax.set_xlim(-max_range, max_range)
+        ax.set_ylim(-max_range, max_range)
+        ax.set_zlim(0, np.max([depth['z'] for depth_dict in depth_info for depth_list in depth_dict.values() for depth in depth_list]))
+        
+        # Save as png
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png')
+        buf.seek(0)
+        img = Image.open(buf)
+        img = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+
+        self.display_image(img, self.get3D_label)
+
     
     # Slider value update functions
     def update_tminColor(self, value):
