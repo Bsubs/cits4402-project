@@ -831,12 +831,12 @@ class MaskImage (QtWidgets.QWidget):
         # Camera internal parameter matrix[fx  0  cx]
                                          #[0  fy  cy]
                                          #[0   0   1]
-        self.camera_matrix = np.array([[640, 0, 640],
-                                        [0, 640, 360],
+        self.camera_matrix = np.array([[420, 0, 424],
+                                        [0, 420, 240],
                                         [0, 0, 1]])
  
         # distortion coefficients(ok1, ok2, ok3, op1, op2)
-        self.distortion_coefficients = np.array([-0.1568632423877716, -0.00861599575728178, -3.6368699511513114e-05, -0.0009189021657221019, 0.021558040753006935])
+        self.distortion_coefficients = np.array([0.0005870087770745158, 0.003473134944215417, -0.008524137549102306, 0.000652475340757519, 0.0009333859197795391])
     
         # remove distortion
         undistorted_img = cv2.undistort(self.newimage, self.camera_matrix, self.distortion_coefficients)
@@ -859,7 +859,7 @@ class MaskImage (QtWidgets.QWidget):
         ])
 
         # use focal f for camera72 here
-        f = 640
+        f = 420
         real_world_center = np.mean(real_world_coordinates, axis=0)
         real_world_size = np.linalg.norm(real_world_center - real_world_coordinates[1])
         depth_info = []
