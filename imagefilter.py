@@ -831,17 +831,21 @@ class MaskImage (QtWidgets.QWidget):
         # Camera internal parameter matrix[fx  0  cx]
                                          #[0  fy  cy]
                                          #[0   0   1]
-        self.camera_matrix = np.array([[420, 0, 424],
-                                       [0, 420, 240],
-                                       [0, 0, 1]])
-        
+        self.camera_matrix = np.array([[640, 0, 640],
+                                        [0, 640, 360],
+                                        [0, 0, 1]])
+ 
         # distortion coefficients(ok1, ok2, ok3, op1, op2)
-        self.distortion_coefficients = np.zeros((4, 1))
+        self.distortion_coefficients = np.array([-0.1568632423877716, -0.00861599575728178, -3.6368699511513114e-05, -0.0009189021657221019, 0.021558040753006935])
     
         # remove distortion
         undistorted_img = cv2.undistort(self.newimage, self.camera_matrix, self.distortion_coefficients)
         self.display_image(undistorted_img, self.distortion_label)
+
+        #print(self.sorted_cluster)
+        
         return TRUE
+    
 
     def get3D(self):
         # real-world 2d coordinates from the email
@@ -855,7 +859,7 @@ class MaskImage (QtWidgets.QWidget):
         ])
 
         # use focal f for camera72 here
-        f = 420
+        f = 640
         real_world_center = np.mean(real_world_coordinates, axis=0)
         real_world_size = np.linalg.norm(real_world_center - real_world_coordinates[1])
         depth_info = []
@@ -863,16 +867,25 @@ class MaskImage (QtWidgets.QWidget):
             hexagon_info = {hexagon[0]['label']: []}
             # get center coordinate for each hexagon
             center_coordinates = np.mean([[vertex['center'][0], vertex['center'][1]] for vertex in hexagon], axis=0)
-            for vertex in hexagon:
+            # create a separate list of vertices and sort them based on their angles relative to the center
+            sorted_vertices = sorted(hexagon, key=lambda vertex: np.arctan2(vertex['center'][1] - center_coordinates[1], vertex['center'][0] - center_coordinates[0]))
+            # use sorted_vertices for the depth calculation
+            hexagon_info = {hexagon[0]['label']: []}
+            for vertex in sorted_vertices:
                 # get vertex coordinates
                 image_coordinates = np.array([vertex['center'][0], vertex['center'][1]])
                 # calculate image size
                 image_size = np.linalg.norm(center_coordinates - image_coordinates)
                 # calculate depth
                 depth = f * real_world_size / image_size
-                hexagon_info[hexagon[0]['label']].append({'x': vertex['center'][0], 'y': vertex['center'][1], 'z': depth})
+
+                # Apply inverse perspective transformation to image coordinates
+                image_coordinates_homogeneous = np.append(image_coordinates, 1)
+                image_coordinates_3d = np.linalg.inv(self.camera_matrix).dot(image_coordinates_homogeneous) * depth
+
+                hexagon_info[hexagon[0]['label']].append({'x': image_coordinates_3d[0], 'y': image_coordinates_3d[1], 'z': depth})
+
             depth_info.append(hexagon_info)
-        print(depth_info)
         # All observed rotation and translation vectors
         all_rvecs, all_tvecs = [], []
 
@@ -921,6 +934,10 @@ class MaskImage (QtWidgets.QWidget):
         ax.set_ylim(-max_range, max_range)
         ax.set_zlim(0, np.max([depth['z'] for depth_dict in depth_info for depth_list in depth_dict.values() for depth in depth_list]))
         
+        # Invert x and y axes
+        ax.invert_xaxis()
+        #ax.invert_yaxis()
+
         # Save as png
         buf = io.BytesIO()
         plt.savefig(buf, format='png')
