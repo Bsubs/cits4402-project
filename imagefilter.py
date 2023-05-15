@@ -58,6 +58,8 @@ class MaskImage (QtWidgets.QWidget):
         self.load_image_btn = QPushButton("Load Image", self)
         self.load_image_btn.clicked.connect(self.load_image)
         self.original_image_label = QLabel(self)
+        self.run_all_btn = QPushButton("Run All", self)
+        self.run_all_btn.clicked.connect(self.run_all)
         # Creates the widgets for tminColor and tdiffColor (label, slider, value label)
         self.tminColor_slider = QSlider(Qt.Horizontal)
         self.tminColor_slider.valueChanged.connect(self.update_tminColor)
@@ -132,36 +134,37 @@ class MaskImage (QtWidgets.QWidget):
 
         # Add widgets to grid layout
         self.grid_layout.addWidget(self.load_image_btn, 0, 0, 1, 4)
-        self.grid_layout.addWidget(tminColor_label, 1, 0)
-        self.grid_layout.addWidget(self.tminColor_slider, 1, 1, 1, 3)
-        self.grid_layout.addWidget(self.tminColor_value_label, 1, 4)
-        self.grid_layout.addWidget(tdiffColor_label, 2, 0)
-        self.grid_layout.addWidget(self.tdiffColor_slider, 2, 1, 1, 3)
-        self.grid_layout.addWidget(self.tdiffColor_value_label, 2, 4)
-        self.grid_layout.addWidget(self.original_image_label, 3, 1)
-        self.grid_layout.addWidget(self.masked_image_label, 3, 2)
-        self.grid_layout.addWidget(tminArea_label, 4, 0)
-        self.grid_layout.addWidget(self.tminArea_slider, 4, 1, 1, 3)
-        self.grid_layout.addWidget(self.tminArea_value_label, 4, 4)
-        self.grid_layout.addWidget(tmaxArea_label, 5, 0)
-        self.grid_layout.addWidget(self.tmaxArea_slider, 5, 1, 1, 3)
-        self.grid_layout.addWidget(self.tmaxArea_value_label, 5, 4)
-        self.grid_layout.addWidget(tDistance_label, 6, 0)
-        self.grid_layout.addWidget(self.tDistance_slider, 6, 1, 1, 3)
-        self.grid_layout.addWidget(self.tDistance_value_label, 6, 4)
-        self.grid_layout.addWidget(taxisRatio_label, 7, 0)
-        self.grid_layout.addWidget(self.taxisRatio_slider, 7, 1, 1, 3)
-        self.grid_layout.addWidget(self.taxisRatio_value_label, 7, 4)
-        self.grid_layout.addWidget(tellipse_label, 8, 0)
-        self.grid_layout.addWidget(self.tellipse_slider, 8, 1, 1, 3)
-        self.grid_layout.addWidget(self.tellipse_value_label, 8, 4)
-        self.grid_layout.addWidget(self.cca_btn, 9, 0, 1, 4)
-        self.grid_layout.addWidget(self.cd_btn, 10, 0, 1, 4)
-        self.grid_layout.addWidget(self.cca_label, 11, 1)
-        self.grid_layout.addWidget(self.hexagon_label, 11, 2)
-        self.grid_layout.addWidget(self.lb_btn, 12, 0, 1, 4)
-        self.grid_layout.addWidget(self.lb_label, 13, 1)
-        self.grid_layout.addWidget(self.align_label, 13, 2)
+        self.grid_layout.addWidget(self.run_all_btn, 1, 0, 1, 4)
+        self.grid_layout.addWidget(tminColor_label, 2, 0)
+        self.grid_layout.addWidget(self.tminColor_slider, 2, 1, 1, 3)
+        self.grid_layout.addWidget(self.tminColor_value_label, 2, 4)
+        self.grid_layout.addWidget(tdiffColor_label, 3, 0)
+        self.grid_layout.addWidget(self.tdiffColor_slider, 3, 1, 1, 3)
+        self.grid_layout.addWidget(self.tdiffColor_value_label, 3, 4)
+        self.grid_layout.addWidget(self.original_image_label, 4, 1)
+        self.grid_layout.addWidget(self.masked_image_label, 4, 2)
+        self.grid_layout.addWidget(tminArea_label, 5, 0)
+        self.grid_layout.addWidget(self.tminArea_slider, 5, 1, 1, 3)
+        self.grid_layout.addWidget(self.tminArea_value_label, 5, 4)
+        self.grid_layout.addWidget(tmaxArea_label, 6, 0)
+        self.grid_layout.addWidget(self.tmaxArea_slider, 6, 1, 1, 3)
+        self.grid_layout.addWidget(self.tmaxArea_value_label, 6, 4)
+        self.grid_layout.addWidget(tDistance_label, 7, 0)
+        self.grid_layout.addWidget(self.tDistance_slider, 7, 1, 1, 3)
+        self.grid_layout.addWidget(self.tDistance_value_label, 7, 4)
+        self.grid_layout.addWidget(taxisRatio_label, 8, 0)
+        self.grid_layout.addWidget(self.taxisRatio_slider, 8, 1, 1, 3)
+        self.grid_layout.addWidget(self.taxisRatio_value_label, 8, 4)
+        self.grid_layout.addWidget(tellipse_label, 9, 0)
+        self.grid_layout.addWidget(self.tellipse_slider, 9, 1, 1, 3)
+        self.grid_layout.addWidget(self.tellipse_value_label, 9, 4)
+        self.grid_layout.addWidget(self.cca_btn, 10, 0, 1, 4)
+        self.grid_layout.addWidget(self.cd_btn, 11, 0, 1, 4)
+        self.grid_layout.addWidget(self.cca_label, 12, 1)
+        self.grid_layout.addWidget(self.hexagon_label, 12, 2)
+        self.grid_layout.addWidget(self.lb_btn, 13, 0, 1, 4)
+        self.grid_layout.addWidget(self.lb_label, 14, 1)
+        self.grid_layout.addWidget(self.align_label, 14, 2)
         # self.grid_layout.addWidget(distance_threshold_label, 14, 0)
         # self.grid_layout.addWidget(self.distance_threshold_slider, 14, 1,1,3)
         self.grid_layout.addWidget(self.align_btn, 15, 0, 1, 4)
@@ -947,6 +950,11 @@ class MaskImage (QtWidgets.QWidget):
 
         self.display_image(img, self.get3D_label)
 
+    def ret_sorted_clusters(self):
+        return self.sorted_cluster
+    
+    def ret_masked_img(self):
+        return self.newimage
     
     # Slider value update functions
     def update_tminColor(self, value):
@@ -980,6 +988,13 @@ class MaskImage (QtWidgets.QWidget):
     def update_tellipse(self, value):
         self.tellipse = value
         self.tellipse_value_label.setText(str(value))
+
+    def run_all(self):
+        self.filter_clusters()
+        self.find_target_clusters()
+        self.find_target_lable()
+        self.align_clusters()
+        self.distortion()
     
     # def update_distance_threshold(self, value):
     #     self.distance_threshold = value

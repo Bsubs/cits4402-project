@@ -15,7 +15,7 @@ from PyQt5 import QtWidgets
 from PyQt5 import QtCore
 from PyQt5 import QtGui
 from imagefilter import MaskImage
-
+from triangulate import TriangulateImage
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -31,6 +31,8 @@ class MainWindow(QMainWindow):
         self.tab_widget = QTabWidget()
         layout.addWidget(self.tab_widget)
 
+        self.widgets = {}
+
         # Read data from file and create tabs
         with open('tuned_hyperparameters.json', 'r') as f:
             data = json.load(f)
@@ -41,13 +43,17 @@ class MainWindow(QMainWindow):
             tab_layout.addWidget(widget)
             tab.setLayout(tab_layout)
             self.tab_widget.addTab(tab, name)
-        
+            self.widgets[name] = widget
+                
         # Create the tab for 3D rendering
         tab = QWidget()
         tab_layout = QVBoxLayout()
+        self.triangulate_widget = TriangulateImage(widget_dict=self.widgets)
+        tab_layout.addWidget(self.triangulate_widget)
         tab.setLayout(tab_layout)
         self.tab_widget.addTab(tab, '3D Render of Room')
 
+        
         # Create central widget and set layout
         central_widget = QWidget()
         central_widget.setLayout(layout)
