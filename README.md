@@ -81,7 +81,7 @@ The project was implemented in Python using a variety of libraries for image pro
 - Set the color of the centroids in the aligned image.
 - Convert the aligned image back to the original image type (e.g., uint8).
 - Display the aligned image using the display_image() function.
-- Update self.sorted_cluster, which can be used in getting depth
+- Update self.sorted_cluster with float
 
 
 ## Tuning Hyperparameters
