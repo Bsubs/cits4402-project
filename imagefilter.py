@@ -784,6 +784,7 @@ class MaskImage (QtWidgets.QWidget):
             return np.average(cluster, axis=0, weights=weights)
 
         aligned_centroids = []
+        aligned_centroids_float = []
         # Iterate through all clusters
         for cluster in all_clusters:
             # Calculate the weighted centroid of the cluster
@@ -793,6 +794,12 @@ class MaskImage (QtWidgets.QWidget):
             # Calculate the aligned centroid by adding the offset to the original centroid
             aligned_centroid = np.round(centroid + offset).astype(int)
             aligned_centroids.append(aligned_centroid)
+            # Compute the offset between the weighted centroid and original centroid
+            offset_float = centroid - np.mean(cluster, axis=0)
+            # Calculate the aligned centroid by adding the offset to the original centroid
+            aligned_centroid_float = centroid + offset_float
+            print(aligned_centroid_float)
+            aligned_centroids_float.append(aligned_centroid_float)
             # Move the points in the cluster based on the calculated offset
             for point in cluster:
                 y, x = point
@@ -810,11 +817,11 @@ class MaskImage (QtWidgets.QWidget):
             new_x = np.clip(new_x, 0, image.shape[1] - 1)
             new_y = np.clip(new_y, 0, image.shape[0] - 1)
             centroid_color = image[new_y, new_x]
-            #aligned_image[new_y, new_x] = centroid_color
-            aligned_image[new_y, new_x] = [255, 255, 255]
+            aligned_image[new_y, new_x] = centroid_color
+            #aligned_image[new_y, new_x] = [255, 255, 255]
         # Use the function to sort aligned_centroids
-        aligned_centroids = [np.array([point[1], point[0]]) for point in aligned_centroids]
-        aligned_centroids_sorted = sorted(aligned_centroids, key=lambda point: point[0])
+        aligned_centroids_float = [np.array([point[1], point[0]]) for point in aligned_centroids_float]
+        aligned_centroids_sorted = sorted(aligned_centroids_float, key=lambda point: point[0])
         # calculate distance 
         def distance(point1, point2):
             return np.sqrt((point1[0] - point2[0])**2 + (point1[1] - point2[1])**2)
@@ -824,6 +831,7 @@ class MaskImage (QtWidgets.QWidget):
                 closest_point = min(aligned_centroids_sorted, key=lambda centroid: distance(centroid, point['center']))
                 point['center'] = tuple(closest_point)
         # Convert the aligned_image back to the original image type (e.g., uint8)
+        print(self.sorted_cluster)
         aligned_image = aligned_image.astype(np.uint8)
         self.display_image(aligned_image, self.align_label)
 
