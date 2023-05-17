@@ -77,22 +77,23 @@ class TriangulateImage (QtWidgets.QWidget):
     def plot_triangulate(self):
     
         stuff1 = self.widgets['Camera 11 RGB Left'].ret_sorted_clusters()
-        sorted_cluster_left = np.array(self.process_data(stuff1), dtype=np.float32)
+        sorted_cluster_left = np.array(self.process_data(stuff1))
+        print(sorted_cluster_left)
         image_left = self.widgets['Camera 11 RGB Left'].ret_masked_img()
         
         stuff2 = self.widgets['Camera 11 RGB Right'].ret_sorted_clusters()
-        sorted_cluster_right = np.array(self.process_data(stuff2), dtype=np.float32)
+        sorted_cluster_right = np.array(self.process_data(stuff2))
         image_right = self.widgets['Camera 11 RGB Right'].ret_masked_img()
-
+        print(sorted_cluster_right)
         # Left Camera intrinsic parameters
-        fx_l = 640
-        fy_l = 640
-        cx_l = 641.63525390625
-        cy_l = 355.5729675292969
+        fx_l = 697.4555053710938
+        fy_l = 697.4555053710938
+        cx_l = 621.2157592773438
+        cy_l = 353.8743896484375
 
         # Right Camera intrinsic parameters
-        fx_r = 640
-        fy_r = 640
+        fx_r = 696.7808837890625
+        fy_r = 696.7808837890625
         cx_r = 641.63525390625
         cy_r = 355.5729675292969
 
