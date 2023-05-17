@@ -77,11 +77,11 @@ class TriangulateImage (QtWidgets.QWidget):
     def plot_triangulate(self):
     
         stuff1 = self.widgets['Camera 11 RGB Left'].ret_sorted_clusters()
-        sorted_cluster_left = np.array(self.process_data(stuff1))
+        sorted_cluster_left = np.array(self.process_data(stuff1), dtype=np.float32)
         image_left = self.widgets['Camera 11 RGB Left'].ret_masked_img()
         
         stuff2 = self.widgets['Camera 11 RGB Right'].ret_sorted_clusters()
-        sorted_cluster_right = np.array(self.process_data(stuff2))
+        sorted_cluster_right = np.array(self.process_data(stuff2), dtype=np.float32)
         image_right = self.widgets['Camera 11 RGB Right'].ret_masked_img()
 
         # Left Camera intrinsic parameters
@@ -136,6 +136,7 @@ class TriangulateImage (QtWidgets.QWidget):
         projection_left = np.dot(K_l, E_l)
         projection_right = np.dot(K_r, E_r)
 
+
         points_3d = cv2.triangulatePoints(projection_left, projection_right, sorted_cluster_left.T, sorted_cluster_right.T)
         print('test')
         #points_3d = points_3d / points_3d[3]  # Homogeneous coordinates to 3D Cartesian
@@ -148,23 +149,12 @@ class TriangulateImage (QtWidgets.QWidget):
         # tvec = np.zeros((3, 1))
 
         # #success, rvec, tvec, inliers = cv2.solvePnPRansac(points_3d, sorted_cluster_left, camera_matrix_left, np.zeros((5,)))
-        fig = plt.figure(figsize=(10, 10))
+        fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
-        print('test')
-
-        for i in range(points_3d.shape[1]):
-            x = points_3d[0, i]
-            y = points_3d[1, i]
-            z = points_3d[2, i]
-            ax.scatter(x, y, z, color='black', s=20)
-            print('test')
-
-        # Set labels for the axes
+        ax.scatter(points_3d[:, 0], points_3d[:, 1], points_3d[:, 2])
         ax.set_xlabel('X')
         ax.set_ylabel('Y')
         ax.set_zlabel('Z')
-
-        # Show the plot
         plt.show()
 
     def process_data(self, data):
