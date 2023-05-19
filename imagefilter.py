@@ -897,10 +897,15 @@ class MaskImage (QtWidgets.QWidget):
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
 
+        # Initialize array to store 3D coordinates for export
+        self.coords3D = []
+
         # Loop through each hexagon
         for hexagon in self.sorted_cluster:
             # Get the center of the hexagon
             center_x, center_y = hexagon[0]['center']
+            hex3D = []
+            hex3D.append({'label': hexagon[0]['label'] })
             
             # Loop through each point in the hexagon
             for point in hexagon[0:]:
@@ -929,9 +934,16 @@ class MaskImage (QtWidgets.QWidget):
                 y_scaled = y_camera * scale_factor
                 z_scaled = z_camera * scale_factor
                 
+                # Append the scaled coordinates to hex3D
+                hex3D.append({'center': (x_scaled, y_scaled, z_scaled)})
+
                 # Plot the 3D coordinates
                 ax.scatter(x_scaled, y_scaled, z_scaled, c='b', marker='o')
                 print(f"Point: ({x_scaled:.2f}, {y_scaled:.2f}, {z_scaled:.2f})")
+            
+            self.coords3D.append(hex3D)
+
+        print(self.coords3D)
 
         # Set labels for the axes
         ax.set_xlabel('X')
@@ -940,6 +952,8 @@ class MaskImage (QtWidgets.QWidget):
 
         # Set the aspect ratio of the plot
         ax.set_box_aspect([1, 1, 1])
+
+        # plt.show()
 
         # Save as png
         buf = io.BytesIO()
@@ -955,6 +969,9 @@ class MaskImage (QtWidgets.QWidget):
     
     def ret_masked_img(self):
         return self.newimage
+    
+    def ret_3D_coords(self):
+        return self.coords3D
     
     # Slider value update functions
     def update_tminColor(self, value):

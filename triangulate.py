@@ -37,7 +37,7 @@ class TriangulateImage (QtWidgets.QWidget):
 
         self.widgets = widget_dict
         self.load_image_btn = QPushButton("Print", self)
-        self.load_image_btn.clicked.connect(self.plot_triangulate)
+        self.load_image_btn.clicked.connect(self.pnpproblem)
         self.original_image_label = QLabel(self)
 
         # Create grid layout
@@ -228,3 +228,45 @@ class TriangulateImage (QtWidgets.QWidget):
                 if 'center' in target:
                     coordinates.append(target['center'])
         return coordinates
+    
+    def pnpproblem(self):
+        stuff1 = self.widgets['Camera 11 RGB Left'].ret_sorted_clusters()
+        sorted_cluster_2D = np.array(self.process_data(stuff1), dtype=np.float32)
+
+        stuff2 = self.widgets['Camera 11 RGB Left'].ret_3D_coords()
+        sorted_cluster_3D = np.array(self.process_data(stuff2), dtype=np.float32)
+
+        # Define the camera intrinsic matrix 
+        # Left Camera intrinsic parameters
+        f_x = 697.4555053710938
+        f_y = 697.4555053710938
+        c_x = 621.2157592773438
+        c_y = 353.8743896484375
+        camera_matrix = np.array([[f_x, 0, c_x], [0, f_y, c_y], [0, 0, 1]], dtype=np.float32)
+
+        # Estimate the camera pose using the Perspective-n-Point (PnP) algorithm
+        _, rotation_vector, translation_vector, _ = cv2.solvePnPRansac(sorted_cluster_3D, sorted_cluster_2D, camera_matrix, None)
+
+        # Convert rotation vector to rotation matrix
+        rotation_matrix, _ = cv2.Rodrigues(rotation_vector)
+
+        # Define the arrow length for visualization
+        arrow_length = 0.2
+
+        # Calculate the endpoint of the arrow based on camera position and direction
+        arrow_end = translation_vector.flatten() + rotation_matrix.T @ np.array([0, 0, arrow_length])
+
+        # Plot the 3D points
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        ax.scatter(sorted_cluster_3D[:, 0], sorted_cluster_3D[:, 1], sorted_cluster_3D[:, 2], c='blue')
+
+        # Plot the camera position as a red arrow
+        origin = np.zeros(3)
+        ax.quiver(*origin, *arrow_end, color='red')
+
+        # Set axes labels and display the plot
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        ax.set_zlabel('Z')
+        plt.show()
