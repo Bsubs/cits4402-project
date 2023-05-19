@@ -251,10 +251,10 @@ class TriangulateImage (QtWidgets.QWidget):
         rotation_matrix, _ = cv2.Rodrigues(rotation_vector)
 
         # Define the arrow length for visualization
-        arrow_length = 0.2
+        arrow_length = 10
 
         # Calculate the endpoint of the arrow based on camera position and direction
-        arrow_end = translation_vector.flatten() + rotation_matrix.T @ np.array([0, 0, arrow_length])
+        arrow_end = rotation_matrix.T @ np.array([0, 0, arrow_length])
 
         # Plot the 3D points
         fig = plt.figure()
