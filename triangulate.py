@@ -262,7 +262,7 @@ class TriangulateImage (QtWidgets.QWidget):
         ax.scatter(sorted_cluster_3D[:, 0], sorted_cluster_3D[:, 1], sorted_cluster_3D[:, 2], c='blue')
 
         # Plot the camera position as a red arrow
-        origin = np.zeros(3)
+        origin = translation_vector.flatten()
         ax.quiver(*origin, *arrow_end, color='red')
 
         # Set axes labels and display the plot
