@@ -1,6 +1,8 @@
 from pickle import TRUE
 from PyQt5 import QtWidgets
+import json
 import sys
+import os
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtWidgets import (
@@ -50,8 +52,8 @@ class MaskImage (QtWidgets.QWidget):
         self.tDistance = param_dict.get('tDistance')
         self.taxisRatio = param_dict.get('taxisRatio')
         self.tellipse = param_dict.get('tellipse')
+        self.jsonName = param_dict.get('jsonName')
         self.distance_threshold=1
-
 
         # Creates the widgets for colour thresholding
         # Create load image widget & label
@@ -859,95 +861,85 @@ class MaskImage (QtWidgets.QWidget):
     
 
     def get3D(self):
-        # real-world 2d coordinates from the email
-        real_world_coordinates = np.array([
-            [0, 90.01599884033203],
-            [77.95613861083984, 45.007999420166016],
-            [77.95613861083984, -45.007999420166016],
-            [0, -90.01599884033203],
-            [-77.95613861083984, -45.007999420166016],
-            [-77.95613861083984, 45.007999420166016]
-        ])
+        json_path = os.path.join("data", "camera parameters", self.jsonName)
 
-        # use focal f for camera72 here
-        f = 420
-        real_world_center = np.mean(real_world_coordinates, axis=0)
-        real_world_size = np.linalg.norm(real_world_center - real_world_coordinates[1])
-        depth_info = []
-        for hexagon in self.sorted_cluster:
-            hexagon_info = {hexagon[0]['label']: []}
-            # get center coordinate for each hexagon
-            center_coordinates = np.mean([[vertex['center'][0], vertex['center'][1]] for vertex in hexagon], axis=0)
-            # create a separate list of vertices and sort them based on their angles relative to the center
-            sorted_vertices = sorted(hexagon, key=lambda vertex: np.arctan2(vertex['center'][1] - center_coordinates[1], vertex['center'][0] - center_coordinates[0]))
-            # use sorted_vertices for the depth calculation
-            hexagon_info = {hexagon[0]['label']: []}
-            for vertex in sorted_vertices:
-                # get vertex coordinates
-                image_coordinates = np.array([vertex['center'][0], vertex['center'][1]])
-                # calculate image size
-                image_size = np.linalg.norm(center_coordinates - image_coordinates)
-                # calculate depth
-                depth = f * real_world_size / image_size
+        with open(json_path, 'r') as f:
+            data = json.load(f)
 
-                # Apply inverse perspective transformation to image coordinates
-                image_coordinates_homogeneous = np.append(image_coordinates, 1)
-                image_coordinates_3d = np.linalg.inv(self.camera_matrix).dot(image_coordinates_homogeneous) * depth
+        # Camera intrinsic parameters
+        fx = data["f"]["val"]
+        fy = data["f"]["val"]
+        ocx = data["ocx"]["val"]
+        ocy = data["ocy"]["val"]
+        ok1 = data["ok1"]["val"]
+        ok2 = data["ok2"]["val"]
+        ok3 = data["ok3"]["val"]
+        op1 = data["op1"]["val"]
+        op2 = data["op2"]["val"]
 
-                hexagon_info[hexagon[0]['label']].append({'x': image_coordinates_3d[0], 'y': image_coordinates_3d[1], 'z': depth})
+        # Known 3D coordinates of hexagon's vertices
+        # Coordinates of the hexagon points
+        points = [
+            (0, 90.01599884033203),
+            (77.95613861083984, 45.007999420166016),
+            (77.95613861083984, -45.007999420166016),
+            (0, -90.01599884033203),
+            (-77.95613861083984, -45.007999420166016),
+            (-77.95613861083984, 45.007999420166016)
+        ]
 
-            depth_info.append(hexagon_info)
-        # All observed rotation and translation vectors
-        all_rvecs, all_tvecs = [], []
+        # Calculate the distance between the first and second point
+        x1, y1 = points[0]
+        x2, y2 = points[1]
+        hexagon_size = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
 
-        # Calculate rotation and translation vectors for every target
-        for target_dict in depth_info:
-            for target, points in target_dict.items():
-                object_points = np.array([[p['x'], p['y'], p['z']] for p in points])
-                image_points = np.array([[p['x'], p['y']] for p in points])
-                image_points = image_points.astype(np.float32)
-                _, rvecs, tvecs = cv2.solvePnP(object_points, 
-                                               image_points, 
-                                               self.camera_matrix, 
-                                               self.distortion_coefficients)
-                all_rvecs.append(rvecs)
-                all_tvecs.append(tvecs)
-
-
-       # Average rotation and translation vectors
-        mean_rvecs = np.mean(all_rvecs, axis=0)
-        mean_tvecs = np.mean(all_tvecs, axis=0)
-
-        # Create 3D plot
-        fig = plt.figure(figsize=(10, 10))
+        # Initialize 3D plot
+        fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
 
-        for target_dict in depth_info:
-            for target, points in target_dict.items():
-                for point in points:
-                    x = point['x']
-                    y = point['y']
-                    z = point['z']
-                    ax.scatter(x, y, z, label=target, color='black', s=20)
+        # Loop through each hexagon
+        for hexagon in self.sorted_cluster:
+            # Get the center of the hexagon
+            center_x, center_y = hexagon[0]['center']
+            
+            # Loop through each point in the hexagon
+            for point in hexagon[0:]:
+                # Extract image coordinates
+                x, y = point['center']
+                
+                # Calculate normalized coordinates
+                u = (x - ocx) / fx
+                v = (y - ocy) / fy
+                
+                # Apply radial and tangential distortion
+                r2 = u**2 + v**2
+                delta_u = u * (ok1 * r2 + ok2 * r2**2 + ok3 * r2**3) + 2 * op1 * u * v + op2 * (r2 + 2 * u**2)
+                delta_v = v * (ok1 * r2 + ok2 * r2**2 + ok3 * r2**3) + op1 * (r2 + 2 * v**2) + 2 * op2 * u * v
+                u_distorted = u + delta_u
+                v_distorted = v + delta_v
+                
+                # Convert to camera coordinates
+                x_camera = u_distorted * fx
+                y_camera = v_distorted * fy
+                z_camera = fx  # Assuming the points lie on the image plane
+                
+                # Scale the camera coordinates
+                scale_factor = hexagon_size / math.sqrt(x_camera**2 + y_camera**2 + z_camera**2)
+                x_scaled = x_camera * scale_factor
+                y_scaled = y_camera * scale_factor
+                z_scaled = z_camera * scale_factor
+                
+                # Plot the 3D coordinates
+                ax.scatter(x_scaled, y_scaled, z_scaled, c='b', marker='o')
+                print(f"Point: ({x_scaled:.2f}, {y_scaled:.2f}, {z_scaled:.2f})")
 
-        # Calculate and plot camera position
-        camera_position = -np.linalg.inv(cv2.Rodrigues(mean_rvecs)[0]).dot(mean_tvecs)
-        print(camera_position)
-        ax.scatter(*camera_position, label='Camera', color='r')
+        # Set labels for the axes
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        ax.set_zlabel('Z')
 
-        # Calculate and plot camera direction
-        R, _ = cv2.Rodrigues(mean_rvecs)
-        camera_direction = R.dot(np.array([[0], [0], [-1]]))
-        ax.quiver(*camera_position, *camera_direction, color='r')
-        # Set 3D range
-        max_range = np.max([np.abs(depth['x']) for depth_dict in depth_info for depth_list in depth_dict.values() for depth in depth_list])
-        ax.set_xlim(-max_range, max_range)
-        ax.set_ylim(-max_range, max_range)
-        ax.set_zlim(0, np.max([depth['z'] for depth_dict in depth_info for depth_list in depth_dict.values() for depth in depth_list]))
-        
-        # Invert x and y axes
-        ax.invert_xaxis()
-        #ax.invert_yaxis()
+        # Set the aspect ratio of the plot
+        ax.set_box_aspect([1, 1, 1])
 
         # Save as png
         buf = io.BytesIO()

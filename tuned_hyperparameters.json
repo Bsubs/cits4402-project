@@ -6,7 +6,8 @@
         "tmaxArea": 150,
         "tDistance": 100,
         "taxisRatio": 2.5,
-        "tellipse": 7
+        "tellipse": 7,
+        "jsonName": "zedLeft720p.json"
     },
     "Camera 11 RGB Right": {
         "tminColor": 56,
@@ -15,7 +16,8 @@
         "tmaxArea": 116,
         "tDistance": 27,
         "taxisRatio": 2.5,
-        "tellipse": 7
+        "tellipse": 7,
+        "jsonName": "zedRight720p.json"
     },
     "Camera 71 RGB": {
         "tminColor": 99,
@@ -24,7 +26,8 @@
         "tmaxArea": 111,
         "tDistance": 20,
         "taxisRatio": 1.8,
-        "tellipse": 7
+        "tellipse": 7,
+        "jsonName": "realsense71RGB.json"
     },
     "Camera 72 RGB": {
         "tminColor": 80,
@@ -33,7 +36,8 @@
         "tmaxArea": 53,
         "tDistance": 20,
         "taxisRatio": 2.3,
-        "tellipse": 7
+        "tellipse": 7,
+        "jsonName": "realsense72RGB.json"
     },
     "Camera 73 RGB": {
         "tminColor": 99,
@@ -42,7 +46,8 @@
         "tmaxArea": 92,
         "tDistance": 20,
         "taxisRatio": 2.2,
-        "tellipse": 4
+        "tellipse": 4,
+        "jsonName": "realsense73RGB.json"
     },
     "Camera 74 RGB": {
         "tminColor": 65,
@@ -51,6 +56,7 @@
         "tmaxArea": 200,
         "tDistance": 23,
         "taxisRatio": 1.4,
-        "tellipse": 30
+        "tellipse": 30,
+        "jsonName": "realsense74RGB.json"
     }
 }

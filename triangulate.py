@@ -74,15 +74,76 @@ class TriangulateImage (QtWidgets.QWidget):
         label.setPixmap(pixmap)
         label.setScaledContents(True)
 
+    def get_extrinsic(self, coordinates):
+        # Known 3D coordinates of hexagon's vertices
+        # Coordinates of the hexagon points
+        points = [
+            (0, 90.01599884033203),
+            (77.95613861083984, 45.007999420166016),
+            (77.95613861083984, -45.007999420166016),
+            (0, -90.01599884033203),
+            (-77.95613861083984, -45.007999420166016),
+            (-77.95613861083984, 45.007999420166016)
+        ]
+
+        # Calculate the distance between the first and second point
+        x1, y1 = points[0]
+        x2, y2 = points[1]
+        hexagon_size = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+
+        # Image coordinates of hexagon's vertices
+        hexagon_2d = np.array([[194, 276], [209, 286], [208, 306], [193, 316], [180, 306], [181, 286]], dtype=np.float32)
+
+        # Camera intrinsic parameters
+        fx = 640
+        fy = 640
+        ocx = 641.63525390625
+        ocy = 355.5729675292969
+
+        # Camera distortion parameters
+        k1 = -0.1568632423877716
+        k2 = -0.00861599575728178
+        k3 = 0.021558040753006935
+        p1 = -3.6368699511513114e-05
+        p2 = -0.0009189021657221019
+
+        # Construct camera matrix
+        camera_matrix = np.array([[fx, 0, ocx], [0, fy, ocy], [0, 0, 1]])
+
+        # Construct distortion coefficients
+        dist_coeffs = np.array([k1, k2, p1, p2, k3])
+
+        # Undistort image points
+        undistorted_points = cv2.undistortPoints(hexagon_2d.reshape(-1, 1, 2), camera_matrix, dist_coeffs)
+
+        # Convert to 2D array
+        undistorted_points = undistorted_points.squeeze()
+
+        # Generate 3D coordinates of the hexagon's vertices
+        hexagon_3d = np.zeros((6, 3), dtype=np.float32)
+        hexagon_3d[:, :2] = hexagon_size * np.array([[0, 0], [1, 0.5], [1, -0.5], [0, 0], [-1, -0.5], [-1, 0.5]])
+
+        # Solve for extrinsic parameters
+        retval, rvec, tvec = cv2.solvePnP(hexagon_3d, undistorted_points, camera_matrix, dist_coeffs)
+
+        # Convert rotation vector to rotation matrix
+        rotation_matrix, _ = cv2.Rodrigues(rvec)
+
+        # Construct projection matrix
+        projection_matrix = camera_matrix.dot(np.hstack((rotation_matrix, tvec)))
+
+
+        return projection_matrix
+
     def plot_triangulate(self):
     
         stuff1 = self.widgets['Camera 11 RGB Left'].ret_sorted_clusters()
-        sorted_cluster_left = np.array(self.process_data(stuff1))
+        sorted_cluster_left = np.array(self.process_data(stuff1), dtype=np.float32)
         print(sorted_cluster_left)
         image_left = self.widgets['Camera 11 RGB Left'].ret_masked_img()
         
         stuff2 = self.widgets['Camera 11 RGB Right'].ret_sorted_clusters()
-        sorted_cluster_right = np.array(self.process_data(stuff2))
+        sorted_cluster_right = np.array(self.process_data(stuff2), dtype=np.float32)
         image_right = self.widgets['Camera 11 RGB Right'].ret_masked_img()
         print(sorted_cluster_right)
         # Left Camera intrinsic parameters
@@ -134,9 +195,11 @@ class TriangulateImage (QtWidgets.QWidget):
         E_r = np.hstack((R_r, t_r))
 
         # Projection matrices
-        projection_left = np.dot(K_l, E_l)
-        projection_right = np.dot(K_r, E_r)
+        projection_left = np.array(np.dot(K_l, E_l), dtype=np.float32)
+        projection_right = np.array(np.dot(K_r, E_r), dtype=np.float32)
 
+        projection_left = self.get_extrinsic(np.array([[193, 316], [208, 306], [209, 286], [194, 276],[181, 286], [180, 306]], dtype=np.float32))
+        #projection_right = self.get_extrinsic(np.array([[206, 320], [221,311], [222, 292], [209,282],[196,292], [194,311]], dtype=np.float32))
 
         points_3d = cv2.triangulatePoints(projection_left, projection_right, sorted_cluster_left.T, sorted_cluster_right.T)
         print('test')
