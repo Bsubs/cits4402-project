@@ -452,40 +452,7 @@ class MaskImage (QtWidgets.QWidget):
             return output_image
 
         processed_image = process_image(output_image)
-        # Convert the output image back to the uint8 data type
-        processed_image = processed_image.astype(np.uint8)
-
-
-        def set_to_blue(y, x, image, height, width, distance=3):
-            # If the pixel is not blue, return immediately
-            if not np.all(image[y, x] == [255, 0, 0]):
-                return
-
-            # Get the neighboring pixels within a certain distance
-            neighbors = get_neighbors(y, x, height, width, distance)
-
-            # Check if any of the neighboring pixels is non-blue and non-black
-            non_blue_neighbors = [(neighbor_y, neighbor_x) for neighbor_y, neighbor_x in neighbors
-                          if not (np.all(image[neighbor_y, neighbor_x] == [0, 0, 0]) or np.all(image[neighbor_y, neighbor_x] == [255, 0, 0]))]
-
-            # If there are non-blue and non-black neighboring pixels, change them to blue
-            for non_blue_neighbor in non_blue_neighbors:
-                image[non_blue_neighbor] = [255, 0, 0]
-
-        def process_image2(image):
-            height, width, _ = image.shape
-            output_image = image.copy()
-
-            for y in range(height):
-                for x in range(width):
-                    set_to_blue(y, x, output_image, height, width)
-
-            return output_image
         
-        processed_image = process_image2(processed_image)
-
-
-
         self.processed_image = processed_image
 
         # Convert image to HSV color space
@@ -1050,7 +1017,6 @@ class MaskImage (QtWidgets.QWidget):
         self.find_target_lable()
         self.align_clusters()
         self.distortion()
-        self.get3D()
     
     # def update_distance_threshold(self, value):
     #     self.distance_threshold = value
