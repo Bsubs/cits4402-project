@@ -779,8 +779,10 @@ class MaskImage (QtWidgets.QWidget):
                 [weight(image, p, extended_points, average_color) for p in cluster])
             total_weight = np.sum(weights)
             if total_weight == 0:
+                print('OOPS')
                 return [186.99513931, 470.34900327]
             else:
+                print(np.average(cluster, axis=0, weights=weights))
                 return np.average(cluster, axis=0, weights=weights)
 
         aligned_centroids = []
@@ -1010,6 +1012,7 @@ class MaskImage (QtWidgets.QWidget):
         self.find_target_lable()
         self.align_clusters()
         self.distortion()
+        self.get3D()
     
     # def update_distance_threshold(self, value):
     #     self.distance_threshold = value
