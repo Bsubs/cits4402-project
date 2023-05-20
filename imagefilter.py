@@ -1050,6 +1050,7 @@ class MaskImage (QtWidgets.QWidget):
         self.find_target_lable()
         self.align_clusters()
         self.distortion()
+        self.get3D()
     
     # def update_distance_threshold(self, value):
     #     self.distance_threshold = value
