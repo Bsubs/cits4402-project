@@ -180,32 +180,6 @@ class TriangulateImage (QtWidgets.QWidget):
 
     def calibrate_11_R(self):
 
-        # Camera 11_L Intrinsic Parameters
-        camera_11_L_json = self.widgets['Camera 11 RGB Left'].jsonName
-        json_path_L = os.path.join("data", "camera parameters", camera_11_L_json)
-
-        with open(json_path_L, 'r') as f:
-            data = json.load(f)
-
-        # Camera 11_L intrinsic parameters
-        fx1 = data["f"]["val"]
-        fy1 = data["f"]["val"]
-        cx1 = data["ocx"]["val"]
-        cy1 = data["ocy"]["val"]
-        k1 = data["ok1"]["val"]
-        k2 = data["ok2"]["val"]
-        k3 = data["ok3"]["val"]
-        p1 = data["op1"]["val"]
-        p2 = data["op2"]["val"]
-
-        # Camera 11_L Intrinsic Parameters
-        camera1_intrinsic = np.array([[fx1, 0, cx1],
-                                    [0, fy1, cy1],
-                                    [0, 0, 1]])
-
-        # Camera 11_L Distortion Parameters
-        camera1_distortion = np.array([k1, k2, p1, p2, k3])
-
         # Camera 11_R Intrinsic Parameters
         camera_11_R_json = self.widgets['Camera 11 RGB Right'].jsonName
         json_path_R = os.path.join("data", "camera parameters", camera_11_R_json)
@@ -225,37 +199,22 @@ class TriangulateImage (QtWidgets.QWidget):
         p2 = data["op2"]["val"]
 
         camera2_intrinsic = np.array([[fx2, 0, cx2],
-                                    [0, fy2, cy2],
+                                    [0, fy2, fy2],
                                     [0, 0, 1]])
 
         # Camera 2 Distortion Parameters
         camera2_distortion = np.array([k1, k2, p1, p2, k3])
+        camera_matrix = np.array([[fx2, 0, cx2], [0, fy2, cy2], [0, 0, 1]], dtype=np.float32)
+        # matched_labels, camera1_2D, camera2_2D, camera_2D_remainder, camera_1_3D = self.get_matching_coordinates(self.widgets['Camera 11 RGB Left'].ret_sorted_clusters(), self.widgets['Camera 11 RGB Right'].ret_sorted_clusters(), self.cam_11_L_3D)
 
-        matched_labels, camera1_2D, camera2_2D, camera_2D_remainder, camera_1_3D = self.get_matching_coordinates(self.widgets['Camera 11 RGB Left'].ret_sorted_clusters(), self.widgets['Camera 11 RGB Right'].ret_sorted_clusters(), self.cam_11_L_3D)
-
-        # 2D Coordinates of Common Labeled Targets
-        common_targets_2d = np.array(camera2_2D, dtype=np.float32)
-
-        # 3D Coordinates of Common Labeled Targets
-        common_targets_3d = np.array(camera_1_3D, dtype=np.float32)
-
-        # Apply Camera Calibration to Undistort 2D Coordinates
-        common_targets_2d_undistorted_1 = cv2.undistortPoints(common_targets_2d.reshape(-1, 1, 2),
-                                                            camera1_intrinsic,
-                                                            camera1_distortion)
-        common_targets_2d_undistorted_2 = cv2.undistortPoints(common_targets_2d.reshape(-1, 1, 2),
-                                                            camera2_intrinsic,
-                                                            camera2_distortion)
-
-        # Reshape the Undistorted 2D Coordinates
-        common_targets_2d_undistorted_1 = common_targets_2d_undistorted_1.squeeze()
-        common_targets_2d_undistorted_2 = common_targets_2d_undistorted_2.squeeze()
-
-        # Estimate Pose of Camera 2 Relative to Camera 1
-        retval, rotation_vec, translation_vec = cv2.solvePnP(common_targets_3d,
-                                                            common_targets_2d_undistorted_2,
-                                                            camera1_intrinsic,
-                                                            camera1_distortion)
+        stuff1 = self.widgets['Camera 11 RGB Left'].ret_sorted_clusters()
+        sorted_cluster_2D = np.array(self.process_data(stuff1), dtype=np.float32)
+        self.cam_11_L_3D = self.widgets['Camera 11 RGB Left'].ret_3D_coords()
+        sorted_cluster_3D = np.array(self.process_data(self.cam_11_L_3D), dtype=np.float32)
+        _, rotation_vec, translation_vec, _ = cv2.solvePnPRansac(sorted_cluster_3D,
+                                                            sorted_cluster_2D,
+                                                            camera_matrix,
+                                                            None)
 
 
         # Convert rotation vector to rotation matrix
@@ -264,6 +223,7 @@ class TriangulateImage (QtWidgets.QWidget):
         arrow_length = 10
         # Calculate the endpoint of the arrow based on camera position and direction
         arrow_end = rotation_matrix.T @ np.array([0, 0, arrow_length])
+        
         origin = translation_vec.flatten()
         arrow_params = [origin, arrow_end]
         self.overall_camera_pose.append(arrow_params)
@@ -276,7 +236,7 @@ class TriangulateImage (QtWidgets.QWidget):
             ax.scatter(points[:, 0], points[:, 1], points[:, 2], c='blue')
 
         for arrows in self.overall_camera_pose:
-            ax.quiver(*arrows[0], *arrows[1], color='red')
+            ax.quiver(*arrows[0], *arrows[1], color='blue')
 
         # Set axes labels and display the plot
         ax.set_xlabel('X')
@@ -285,31 +245,31 @@ class TriangulateImage (QtWidgets.QWidget):
         plt.show()
     
     def calibrate_72(self):
-        # Camera 11_L Intrinsic Parameters
-        camera_11_L_json = self.widgets['Camera 11 RGB Left'].jsonName
-        json_path_L = os.path.join("data", "camera parameters", camera_11_L_json)
+        # # Camera 11_L Intrinsic Parameters
+        # camera_11_L_json = self.widgets['Camera 11 RGB Left'].jsonName
+        # json_path_L = os.path.join("data", "camera parameters", camera_11_L_json)
 
-        with open(json_path_L, 'r') as f:
-            data = json.load(f)
+        # with open(json_path_L, 'r') as f:
+        #     data = json.load(f)
 
-        # Camera 11_L intrinsic parameters
-        fx1 = data["f"]["val"]
-        fy1 = data["f"]["val"]
-        cx1 = data["ocx"]["val"]
-        cy1 = data["ocy"]["val"]
-        k1 = data["ok1"]["val"]
-        k2 = data["ok2"]["val"]
-        k3 = data["ok3"]["val"]
-        p1 = data["op1"]["val"]
-        p2 = data["op2"]["val"]
+        # # Camera 11_L intrinsic parameters
+        # fx1 = data["f"]["val"]
+        # fy1 = data["f"]["val"]
+        # cx1 = data["ocx"]["val"]
+        # cy1 = data["ocy"]["val"]
+        # k1 = data["ok1"]["val"]
+        # k2 = data["ok2"]["val"]
+        # k3 = data["ok3"]["val"]
+        # p1 = data["op1"]["val"]
+        # p2 = data["op2"]["val"]
 
-        # Camera 11_L Intrinsic Parameters
-        camera1_intrinsic = np.array([[fx1, 0, cx1],
-                                    [0, fy1, cy1],
-                                    [0, 0, 1]])
+        # # Camera 11_L Intrinsic Parameters
+        # camera1_intrinsic = np.array([[fx1, 0, cx1],
+        #                             [0, fy1, cy1],
+        #                             [0, 0, 1]])
 
-        # Camera 11_L Distortion Parameters
-        camera1_distortion = np.array([k1, k2, p1, p2, k3])
+        # # Camera 11_L Distortion Parameters
+        # camera1_distortion = np.array([k1, k2, p1, p2, k3])
 
         # Camera 72 Intrinsic Parameters
         camera_72_json = self.widgets['Camera 72 RGB'].jsonName
@@ -318,7 +278,7 @@ class TriangulateImage (QtWidgets.QWidget):
         with open(json_path_R, 'r') as f:
             data = json.load(f)
 
-        # Camera 11_R intrinsic parameters
+        # Camera 72 intrinsic parameters
         fx2 = data["f"]["val"]
         fy2 = data["f"]["val"]
         cx2 = data["ocx"]["val"]
@@ -335,6 +295,7 @@ class TriangulateImage (QtWidgets.QWidget):
 
         # Camera 2 Distortion Parameters
         camera2_distortion = np.array([k1, k2, p1, p2, k3])
+        camera_matrix = np.array([[fx2, 0, cx2], [0, fy2, cy2], [0, 0, 1]], dtype=np.float32)
 
         matched_labels, camera1_2D, camera2_2D, camera2_2D_remainder,camera_1_3D = self.get_matching_coordinates(self.widgets['Camera 11 RGB Right'].ret_sorted_clusters(), self.widgets['Camera 72 RGB'].ret_sorted_clusters(), self.cam_11_L_3D)
 
@@ -343,24 +304,27 @@ class TriangulateImage (QtWidgets.QWidget):
 
         # 3D Coordinates of Common Labeled Targets
         common_targets_3d = np.array(camera_1_3D, dtype=np.float32)
+        print(common_targets_2d)
+        print(common_targets_3d)
 
-        # Apply Camera Calibration to Undistort 2D Coordinates
-        common_targets_2d_undistorted_1 = cv2.undistortPoints(common_targets_2d.reshape(-1, 1, 2),
-                                                            camera1_intrinsic,
-                                                            camera1_distortion)
-        common_targets_2d_undistorted_2 = cv2.undistortPoints(common_targets_2d.reshape(-1, 1, 2),
-                                                            camera2_intrinsic,
-                                                            camera2_distortion)
+        # # Apply Camera Calibration to Undistort 2D Coordinates
+        # common_targets_2d_undistorted_1 = cv2.undistortPoints(common_targets_2d.reshape(-1, 1, 2),
+        #                                                     camera1_intrinsic,
+        #                                                     camera1_distortion)
+        # common_targets_2d_undistorted_2 = cv2.undistortPoints(common_targets_2d.reshape(-1, 1, 2),
+        #                                                     camera2_intrinsic,
+        #                                                     camera2_distortion)
 
-        # Reshape the Undistorted 2D Coordinates
-        common_targets_2d_undistorted_1 = common_targets_2d_undistorted_1.squeeze()
-        common_targets_2d_undistorted_2 = common_targets_2d_undistorted_2.squeeze()
+        # # Reshape the Undistorted 2D Coordinates
+        # common_targets_2d_undistorted_1 = common_targets_2d_undistorted_1.squeeze()
+        # common_targets_2d_undistorted_2 = common_targets_2d_undistorted_2.squeeze()
 
         # Estimate Pose of Camera 2 Relative to Camera 1
-        retval, rotation_vec, translation_vec = cv2.solvePnP(common_targets_3d,
-                                                            common_targets_2d_undistorted_2,
-                                                            camera1_intrinsic,
-                                                            camera1_distortion)
+
+        _, rotation_vec, translation_vec,_ = cv2.solvePnPRansac(common_targets_3d,
+                                                            common_targets_2d,
+                                                            camera_matrix,
+                                                            None)
 
 
         # Convert rotation vector to rotation matrix
@@ -375,31 +339,31 @@ class TriangulateImage (QtWidgets.QWidget):
 
 
 
-       # Apply Camera Calibration to Undistort 2D Coordinates in Camera 2
-        targets_2d_undistorted_camera2 = cv2.undistortPoints(camera2_2D_remainder.reshape(-1, 1, 2),
-                                                            camera2_intrinsic,
-                                                            camera2_distortion)
-        targets_2d_undistorted_camera2 = targets_2d_undistorted_camera2.squeeze()
+    #    # Apply Camera Calibration to Undistort 2D Coordinates in Camera 2
+    #     targets_2d_undistorted_camera2 = cv2.undistortPoints(camera2_2D_remainder.reshape(-1, 1, 2),
+    #                                                         camera2_intrinsic,
+    #                                                         camera2_distortion)
+    #     targets_2d_undistorted_camera2 = targets_2d_undistorted_camera2.squeeze()
 
-        # Transform 2D Coordinates from Camera 2 to Camera 1 Coordinates
-        rotation_matrix = cv2.Rodrigues(rotation_vec)[0]
-        translation_vec = translation_vec.flatten()
-        homogeneous_coords = np.hstack((targets_2d_undistorted_camera2, np.ones((targets_2d_undistorted_camera2.shape[0], 1))))
-        transformed_homogeneous_coords = rotation_matrix @ homogeneous_coords.T + np.expand_dims(translation_vec, axis=1)
-        transformed_homogeneous_coords /= transformed_homogeneous_coords[2, :]
-        targets_2d_transformed_camera1 = transformed_homogeneous_coords[:2, :].T
+    #     # Transform 2D Coordinates from Camera 2 to Camera 1 Coordinates
+    #     rotation_matrix = cv2.Rodrigues(rotation_vec)[0]
+    #     translation_vec = translation_vec.flatten()
+    #     homogeneous_coords = np.hstack((targets_2d_undistorted_camera2, np.ones((targets_2d_undistorted_camera2.shape[0], 1))))
+    #     transformed_homogeneous_coords = rotation_matrix @ homogeneous_coords.T + np.expand_dims(translation_vec, axis=1)
+    #     transformed_homogeneous_coords /= transformed_homogeneous_coords[2, :]
+    #     targets_2d_transformed_camera1 = transformed_homogeneous_coords[:2, :].T
 
-        # Estimate 3D Coordinates of Targets in Camera 1 Coordinates
-        targets_3d_camera1 = np.zeros((targets_2d_transformed_camera1.shape[0], 3))
-        for i in range(targets_2d_transformed_camera1.shape[0]):
-            x, y = targets_2d_transformed_camera1[i]
-            A = np.dot(rotation_matrix, np.linalg.inv(camera1_intrinsic))
-            B = translation_vec - np.dot(A, np.array([x, y, 1]))
-            lambda_ = np.linalg.norm(np.dot(np.linalg.inv(A), B))
-            targets_3d_camera1[i] = np.dot(np.linalg.inv(A), B) / lambda_
+    #     # Estimate 3D Coordinates of Targets in Camera 1 Coordinates
+    #     targets_3d_camera1 = np.zeros((targets_2d_transformed_camera1.shape[0], 3))
+    #     for i in range(targets_2d_transformed_camera1.shape[0]):
+    #         x, y = targets_2d_transformed_camera1[i]
+    #         A = np.dot(rotation_matrix, np.linalg.inv(camera1_intrinsic))
+    #         B = translation_vec - np.dot(A, np.array([x, y, 1]))
+    #         lambda_ = np.linalg.norm(np.dot(np.linalg.inv(A), B))
+    #         targets_3d_camera1[i] = np.dot(np.linalg.inv(A), B) / lambda_
 
 
-        self.overall_3D_points.append(targets_3d_camera1)
+    #     self.overall_3D_points.append(targets_3d_camera1)
 
         # Plot the 3D points
         fig = plt.figure()
@@ -407,8 +371,8 @@ class TriangulateImage (QtWidgets.QWidget):
 
         #ax.scatter(targets_3d_camera1[:, 0], targets_3d_camera1[:, 1], targets_3d_camera1[:, 2], c='blue')
 
-        print('3D coords:')
-        print(targets_3d_camera1)
+        # print('3D coords:')
+        # print(targets_3d_camera1)
         for points in self.overall_3D_points:
             ax.scatter(points[:, 0], points[:, 1], points[:, 2], c='blue')
 
