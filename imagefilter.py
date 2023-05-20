@@ -977,6 +977,10 @@ class MaskImage (QtWidgets.QWidget):
     
     def ret_3D_coords(self):
         return self.coords3D
+        
+    def ret_width_height(self):
+        height, width, _ = self.original_image.shape
+        return width, height
     
     # Slider value update functions
     def update_tminColor(self, value):
@@ -1017,6 +1021,7 @@ class MaskImage (QtWidgets.QWidget):
         self.find_target_lable()
         self.align_clusters()
         self.distortion()
+        self.get3D()
     
     # def update_distance_threshold(self, value):
     #     self.distance_threshold = value
