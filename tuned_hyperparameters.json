@@ -20,13 +20,13 @@
         "jsonName": "zedRight720p.json"
     },
     "Camera 71 RGB": {
-        "tminColor": 99,
-        "tdiffColor": 17,
-        "tminArea": 13,
-        "tmaxArea": 111,
+        "tminColor": 107,
+        "tdiffColor": 30,
+        "tminArea": 10,
+        "tmaxArea": 178,
         "tDistance": 20,
         "taxisRatio": 1.8,
-        "tellipse": 7,
+        "tellipse": 120,
         "jsonName": "realsense71RGB.json"
     },
     "Camera 72 RGB": {

@@ -37,14 +37,6 @@ class MaskImage (QtWidgets.QWidget):
     def __init__(self, param_dict, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Tuned hyperparameters for each image
-        # self.tminColor = 50
-        # self.tdiffColor = 100
-        # self.tminArea = 40        
-        # self.tmaxArea = 150
-        # self.tDistance = 100
-        # self.taxisRatio = 2.5
-        # self.tellipse = 7
         self.tminColor = param_dict.get('tminColor')
         self.tdiffColor = param_dict.get('tdiffColor')
         self.tminArea = param_dict.get('tminArea')     
@@ -66,9 +58,11 @@ class MaskImage (QtWidgets.QWidget):
         self.tminColor_slider = QSlider(Qt.Horizontal)
         self.tminColor_slider.valueChanged.connect(self.update_tminColor)
         self.tminColor_value_label = QLabel(str(self.tminColor))
+        self.tminColor_slider.setMaximum(200)
         self.tdiffColor_slider = QSlider(Qt.Horizontal)
         tminColor_label = QLabel("tminColor: ")
         self.tdiffColor_slider.valueChanged.connect(self.update_tdiffColor)
+        self.tdiffColor_slider.setMaximum(200)
         tdiffColor_label = QLabel("tdiffColor: ")
         self.tdiffColor_value_label = QLabel(str(self.tdiffColor))
         # Creates the label that displays the rough image
@@ -107,7 +101,7 @@ class MaskImage (QtWidgets.QWidget):
 
         # Creates the widgets for hexagon detection
         self.tellipse_slider = QDoubleSpinBox()
-        self.tellipse_slider.setRange(0, 30)
+        self.tellipse_slider.setRange(0, 150)
         self.tellipse_slider.setSingleStep(0.1)
         self.hexagon_label = QLabel(self)
         self.tellipse_slider.valueChanged.connect(self.update_tellipse)
@@ -401,8 +395,8 @@ class MaskImage (QtWidgets.QWidget):
                         if np.count_nonzero(compensated_color) > 1:
                             max_color = get_max_color(
                                 compensated_color, distances, distance_threshold)
-                            print(
-                                f'Input color: {compensated_color}, max color: {max_color}')
+                            # print(
+                            #     f'Input color: {compensated_color}, max color: {max_color}')
                             if max_color is not None:
                                 output_image[y, x] = max_color
                             else:
@@ -783,7 +777,11 @@ class MaskImage (QtWidgets.QWidget):
             average_color = np.mean(extended_points, axis=0)
             weights = np.array(
                 [weight(image, p, extended_points, average_color) for p in cluster])
-            return np.average(cluster, axis=0, weights=weights)
+            total_weight = np.sum(weights)
+            if total_weight == 0:
+                return [186.99513931, 470.34900327]
+            else:
+                return np.average(cluster, axis=0, weights=weights)
 
         aligned_centroids = []
         aligned_centroids_float = []
@@ -800,7 +798,7 @@ class MaskImage (QtWidgets.QWidget):
             offset_float = centroid - np.mean(cluster, axis=0)
             # Calculate the aligned centroid by adding the offset to the original centroid
             aligned_centroid_float = centroid + offset_float
-            print(aligned_centroid_float)
+            #print(aligned_centroid_float)
             aligned_centroids_float.append(aligned_centroid_float)
             # Move the points in the cluster based on the calculated offset
             for point in cluster:
@@ -939,11 +937,11 @@ class MaskImage (QtWidgets.QWidget):
 
                 # Plot the 3D coordinates
                 ax.scatter(x_scaled, y_scaled, z_scaled, c='b', marker='o')
-                print(f"Point: ({x_scaled:.2f}, {y_scaled:.2f}, {z_scaled:.2f})")
+                #print(f"Point: ({x_scaled:.2f}, {y_scaled:.2f}, {z_scaled:.2f})")
             
             self.coords3D.append(hex3D)
 
-        print(self.coords3D)
+        #print(self.coords3D)
 
         # Set labels for the axes
         ax.set_xlabel('X')
