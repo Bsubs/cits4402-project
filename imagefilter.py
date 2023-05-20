@@ -440,10 +440,6 @@ class MaskImage (QtWidgets.QWidget):
 
             image[y, x] = [0, 0, 0]
 
-            for neighbor_y, neighbor_x in neighbors:
-                set_to_black(neighbor_y, neighbor_x, image,
-                             height, width, distance)
-
         def process_image(image):
             height, width, _ = image.shape
             output_image = image.copy()
@@ -452,9 +448,44 @@ class MaskImage (QtWidgets.QWidget):
                 for x in range(width):
                     set_to_black(y, x, output_image, height, width)
 
+
             return output_image
 
         processed_image = process_image(output_image)
+        # Convert the output image back to the uint8 data type
+        processed_image = processed_image.astype(np.uint8)
+
+
+        def set_to_blue(y, x, image, height, width, distance=3):
+            # If the pixel is not blue, return immediately
+            if not np.all(image[y, x] == [255, 0, 0]):
+                return
+
+            # Get the neighboring pixels within a certain distance
+            neighbors = get_neighbors(y, x, height, width, distance)
+
+            # Check if any of the neighboring pixels is non-blue and non-black
+            non_blue_neighbors = [(neighbor_y, neighbor_x) for neighbor_y, neighbor_x in neighbors
+                          if not (np.all(image[neighbor_y, neighbor_x] == [0, 0, 0]) or np.all(image[neighbor_y, neighbor_x] == [255, 0, 0]))]
+
+            # If there are non-blue and non-black neighboring pixels, change them to blue
+            for non_blue_neighbor in non_blue_neighbors:
+                image[non_blue_neighbor] = [255, 0, 0]
+
+        def process_image2(image):
+            height, width, _ = image.shape
+            output_image = image.copy()
+
+            for y in range(height):
+                for x in range(width):
+                    set_to_blue(y, x, output_image, height, width)
+
+            return output_image
+        
+        processed_image = process_image2(processed_image)
+
+
+
         self.processed_image = processed_image
 
         # Convert image to HSV color space
@@ -486,7 +517,13 @@ class MaskImage (QtWidgets.QWidget):
             red_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         contours3, _ = cv2.findContours(
             green_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
+        min_contour_area = 1  # Set your minimum contour area threshold
 
+        # Create new lists to store the contours that are large enough
+        contours1 = [cnt for cnt in contours1 if cv2.contourArea(cnt) > min_contour_area]
+        contours2 = [cnt for cnt in contours2 if cv2.contourArea(cnt) > min_contour_area]
+        contours3 = [cnt for cnt in contours3 if cv2.contourArea(cnt) > min_contour_area]
         # Convert contours to center points
         def get_centroids(contours):
             centroids = []
@@ -562,8 +599,11 @@ class MaskImage (QtWidgets.QWidget):
         blue_rects = get_rectangles(contours1)
         red_rects = get_rectangles(contours2)
         green_rects = get_rectangles(contours3)
+
+
         # Put the center points of the rectangle boxes of all colors into a list
         all_rects = blue_rects + red_rects + green_rects
+        print(len(all_rects))
 
         # Sort from left to right by the x-coordinate of the center point
         sorted_rects = sorted(all_rects, key=lambda rect: rect['center'][0])
@@ -650,36 +690,36 @@ class MaskImage (QtWidgets.QWidget):
             # Assign the resulting labels to the blue points
             blue_rect['label'] = f"HexaTarget_{label}_1"
 
-            # Add a label next to the blue rectangle
-            cv2.putText(marked_image, blue_rect['label'], (blue_rect['x'], blue_rect['y'] - 5),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+            # # Add a label next to the blue rectangle
+            # cv2.putText(marked_image, blue_rect['label'], (blue_rect['x'], blue_rect['y'] - 5),
+            #             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
 
 
-            # Add labels for other points sorted clockwise
-            for i, point in enumerate(clockwise_points, start=2):
-                point_rect = next(
-                    rect for rect in all_rects if rect['center'] == point['center'])
-                point_label = f"HexaTarget_{label}_{i}"
+            # # Add labels for other points sorted clockwise
+            # for i, point in enumerate(clockwise_points, start=2):
+            #     point_rect = next(
+            #         rect for rect in all_rects if rect['center'] == point['center'])
+            #     point_label = f"HexaTarget_{label}_{i}"
 
-                # Calculate text position
-                if i == 4:
-                    text_position = (
-                        point_rect['x'], point_rect['y'] + point_rect['h'] + 20)
-                elif i in [5, 6]:
-                    text_position = (point_rect['x'] - 90, point_rect['y'])
-                else:
-                    text_position = (point_rect['x'], point_rect['y'] - 5)
+            #     # Calculate text position
+            #     if i == 4:
+            #         text_position = (
+            #             point_rect['x'], point_rect['y'] + point_rect['h'] + 20)
+            #     elif i in [5, 6]:
+            #         text_position = (point_rect['x'] - 90, point_rect['y'])
+            #     else:
+            #         text_position = (point_rect['x'], point_rect['y'] - 5)
 
-                # Add a label next to the corresponding rectangle
-                cv2.putText(marked_image, point_label, text_position,
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
-                point_rect = next(
-                    rect for rect in all_rects if rect['center'] == point['center'])
-                point_label = f"HexaTarget_{label}_{i}"
+            #     # Add a label next to the corresponding rectangle
+            #     cv2.putText(marked_image, point_label, text_position,
+            #                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+            #     point_rect = next(
+            #         rect for rect in all_rects if rect['center'] == point['center'])
+            #     point_label = f"HexaTarget_{label}_{i}"
 
-                # Add a label next to the corresponding rectangle
-                cv2.putText(marked_image, point_label, (point_rect['x'], point_rect['y'] - 5),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+            #     # Add a label next to the corresponding rectangle
+            #     cv2.putText(marked_image, point_label, (point_rect['x'], point_rect['y'] - 5),
+            #                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
 
 
         self.display_image(marked_image, self.lb_label)
