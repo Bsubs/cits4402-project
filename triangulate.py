@@ -194,18 +194,18 @@ class TriangulateImage (QtWidgets.QWidget):
         json_path_L = os.path.join("data", "camera parameters", camera_11_L_json)
 
         with open(json_path_L, 'r') as f:
-            data = json.load(f)
+            data1 = json.load(f)
 
         # Camera 11_L intrinsic parameters
-        fx1 = data["f"]["val"]
-        fy1 = data["f"]["val"]
-        cx1 = data["ocx"]["val"]
-        cy1 = data["ocy"]["val"]
-        k1 = data["ok1"]["val"]
-        k2 = data["ok2"]["val"]
-        k3 = data["ok3"]["val"]
-        p1 = data["op1"]["val"]
-        p2 = data["op2"]["val"]
+        fx1 = data1["f"]["val"]
+        fy1 = data1["f"]["val"]
+        cx1 = data1["ocx"]["val"]
+        cy1 = data1["ocy"]["val"]
+        k1 = data1["ok1"]["val"]
+        k2 = data1["ok2"]["val"]
+        k3 = data1["ok3"]["val"]
+        p1 = data1["op1"]["val"]
+        p2 = data1["op2"]["val"]
 
         # Camera 11_L Intrinsic Parameters
         camera1_intrinsic = np.array([[fx1, 0, cx1],
@@ -220,18 +220,18 @@ class TriangulateImage (QtWidgets.QWidget):
         json_path_R = os.path.join("data", "camera parameters", camera_11_R_json)
 
         with open(json_path_R, 'r') as f:
-            data = json.load(f)
+            data2 = json.load(f)
 
         # Camera 11_R intrinsic parameters
-        fx2 = data["f"]["val"]
-        fy2 = data["f"]["val"]
-        cx2 = data["ocx"]["val"]
-        cy2 = data["ocy"]["val"]
-        k1 = data["ok1"]["val"]
-        k2 = data["ok2"]["val"]
-        k3 = data["ok3"]["val"]
-        p1 = data["op1"]["val"]
-        p2 = data["op2"]["val"]
+        fx2 = data2["f"]["val"]
+        fy2 = data2["f"]["val"]
+        cx2 = data2["ocx"]["val"]
+        cy2 = data2["ocy"]["val"]
+        k1 = data2["ok1"]["val"]
+        k2 = data2["ok2"]["val"]
+        k3 = data2["ok3"]["val"]
+        p1 = data2["op1"]["val"]
+        p2 = data2["op2"]["val"]
 
         camera2_intrinsic = np.array([[fx2, 0, cx2],
                                     [0, fy2, cy2],
@@ -247,20 +247,22 @@ class TriangulateImage (QtWidgets.QWidget):
 
 
         # Camera calibration
-        width, height = self.widgets['Camera 11 RGB Left'].ret_width_height()
+        width1, height1 = self.widgets['Camera 11 RGB Left'].ret_width_height()
         ret, camera1_matrix, camera1_dist_coeffs, _, _ = cv2.calibrateCamera([camera_1_3D],
                                                                             [camera1_2D],
-                                                                            (width, height),
+                                                                            (width1, height1),
                                                                             camera1_intrinsic,
                                                                             camera1_distortion,
                                                                             flags=cv2.CALIB_USE_INTRINSIC_GUESS)
-        width, height = self.widgets['Camera 11 RGB Right'].ret_width_height()
+        
+        width2, height2 = self.widgets['Camera 11 RGB Right'].ret_width_height()
         ret, camera2_matrix, camera2_dist_coeffs, _, _ = cv2.calibrateCamera([camera_2_3D],
                                                                             [camera2_2D],
-                                                                            (width, height),
+                                                                            (width2, height2),
                                                                             camera2_intrinsic,
                                                                             camera2_distortion,
                                                                             flags=cv2.CALIB_USE_INTRINSIC_GUESS)
+        
 
         # PnP for Camera 1
         _, camera1_rotation_vector, camera1_translation_vector = cv2.solvePnP(camera_1_3D,
@@ -269,7 +271,7 @@ class TriangulateImage (QtWidgets.QWidget):
                                                                                 camera1_dist_coeffs)
 
         # PnP for Camera 2
-        _, camera2_rotation_vector, camera2_translation_vector = cv2.solvePnP(camera_2_3D,
+        _, camera2_rotation_vector, camera2_translation_vector = cv2.solvePnP(camera_1_3D,
                                                                                 camera2_2D,
                                                                                 camera2_matrix,
                                                                                 camera2_dist_coeffs)
