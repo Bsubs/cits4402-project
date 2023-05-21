@@ -40,8 +40,8 @@ class TriangulateImage (QtWidgets.QWidget):
         self.calibrate_11_R_btn = QPushButton("Calibrate 11 Right", self)
         self.calibrate_11_R_btn.clicked.connect(self.calibrate_11_R)
 
-        # self.calibrate_72_btn = QPushButton("Calibrate 72", self)
-        # self.calibrate_72_btn.clicked.connect(self.calibrate_72)
+        self.calibrate_72_btn = QPushButton("Calibrate 72", self)
+        self.calibrate_72_btn.clicked.connect(self.calibrate_72)
 
         # Create grid layout
         self.grid_layout = QGridLayout()
@@ -50,7 +50,7 @@ class TriangulateImage (QtWidgets.QWidget):
         # Add widgets to grid layout
         self.grid_layout.addWidget(self.calibrate_11_L_btn, 0, 0, 1, 4)
         self.grid_layout.addWidget(self.calibrate_11_R_btn, 1, 0, 1, 4)
-        # self.grid_layout.addWidget(self.calibrate_72_btn, 2, 0, 1, 4)
+        self.grid_layout.addWidget(self.calibrate_72_btn, 2, 0, 1, 4)
         self.grid_layout.setColumnStretch(2, 1)  # add stretch to the empty cell
 
     def load_image(self):
@@ -175,14 +175,14 @@ class TriangulateImage (QtWidgets.QWidget):
                             coordinates_3D_2.append(target['center'])
 
         # Get the leftover points from image 2
-        for targets in coords_2D2:
+        for targets in coords_3D2:
             isRemainder = True
             for label in matching_labels:
                 if targets[0]['label'] == label:
                     isRemainder = False
             
             if isRemainder:
-                for target in targets:
+                for target in targets[1:]:
                     coordinates_2D_remainder.append(target['center'])
 
         return matching_labels, np.array(coordinates_2D_1, dtype=np.float32), np.array(coordinates_2D_2, dtype=np.float32), np.array(coordinates_2D_remainder, dtype=np.float32), np.array(coordinates_3D_1, dtype=np.float32), np.array(coordinates_3D_2, dtype=np.float32)
@@ -271,7 +271,7 @@ class TriangulateImage (QtWidgets.QWidget):
                                                                                 camera1_dist_coeffs)
 
         # PnP for Camera 2
-        _, camera2_rotation_vector, camera2_translation_vector = cv2.solvePnP(camera_1_3D,
+        _, self.camera11_R_rotation_vector, self.camera11_R_translation_vector = cv2.solvePnP(camera_1_3D,
                                                                                 camera2_2D,
                                                                                 camera2_matrix,
                                                                                 camera2_dist_coeffs)
@@ -279,8 +279,132 @@ class TriangulateImage (QtWidgets.QWidget):
         # Relative pose estimation
         relative_rotation_vector, relative_translation_vector, _, _, _, _, _, _, _, _ = cv2.composeRT(camera1_rotation_vector,
                                                                             camera1_translation_vector,
-                                                                            camera2_rotation_vector,
-                                                                            camera2_translation_vector)
+                                                                            self.camera11_R_rotation_vector,
+                                                                            self.camera11_R_translation_vector)
+
+        relative_rotation_matrix, _ = cv2.Rodrigues(relative_rotation_vector)
+   
+
+        # Relative pose transformation
+        relative_rotation_matrix, _ = cv2.Rodrigues(relative_rotation_vector)
+        relative_translation_vector = relative_translation_vector.reshape(3)
+        relative_pose = np.eye(4)
+        relative_pose[:3, :3] = relative_rotation_matrix
+        relative_pose[:3, 3] = relative_translation_vector
+
+        # # Transforming 3D coordinates from Camera 2 to Camera 1's coordinate system
+        # camera2_3d_points_transformed = []
+
+        # for point in self.process_data(self.widgets['Camera 11 RGB Right'].ret_3D_coords()):
+        #     # Convert 3D point to homogeneous coordinates
+        #     point_homogeneous = np.hstack((point, 1)).reshape(4, 1)
+            
+        #     # Apply relative pose transformation
+        #     point_transformed = np.dot(relative_pose, point_homogeneous)
+            
+        #     # Extract transformed 3D coordinates
+        #     point_transformed_3d = point_transformed[:3, 0]
+            
+        #     camera2_3d_points_transformed.append(point_transformed_3d.tolist())
+
+        # camera2_3d_points_transformed = np.array(camera2_3d_points_transformed)
+
+        # self.overall_3D_points.append(camera2_3d_points_transformed)
+
+        # Define the arrow length for visualization
+        arrow_length = 10
+
+        # Convert rotation vector to rotation matrix
+        rotation_matrix_1, _ = cv2.Rodrigues(camera1_rotation_vector)
+        # Calculate the endpoint of the arrow based on camera position and direction
+        arrow_end_1 = rotation_matrix_1.T @ np.array([0, 0, arrow_length])
+
+        # Convert rotation vector to rotation matrix
+        rotation_matrix_2, _ = cv2.Rodrigues(self.camera11_R_rotation_vector)
+        # Calculate the endpoint of the arrow based on camera position and direction
+        arrow_end_2 = rotation_matrix_2.T @ np.array([0, 0, arrow_length])
+
+        # Plot the 3D points
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+
+        # Plot the camera position as a red arrow
+        origin_1 = camera1_translation_vector.flatten()
+        ax.quiver(*origin_1, *arrow_end_1, color='red')
+
+        # Plot the camera position as a red arrow
+        origin_2 = self.camera11_R_translation_vector.flatten()
+        ax.quiver(*origin_2, *arrow_end_2, color='red')
+
+        arrow_params = [origin_1, arrow_end_1]
+        self.overall_camera_pose.append(arrow_params)
+        arrow_params = [origin_2, arrow_end_2]
+        self.overall_camera_pose.append(arrow_params)
+
+        # Plot the 3D points
+        for points in self.overall_3D_points:
+            ax.scatter(points[:, 0], points[:, 1], points[:, 2], c='blue')
+
+        # Set axes labels and display the plot
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        ax.set_zlabel('Z')
+        plt.show()
+
+
+    def calibrate_72(self):
+
+        # Camera 72 Intrinsic Parameters
+        camera_72_json = self.widgets['Camera 72 RGB'].jsonName
+        json_path_R = os.path.join("data", "camera parameters", camera_72_json)
+
+        with open(json_path_R, 'r') as f:
+            data = json.load(f)
+
+        # Camera 72 intrinsic parameters
+        fx = data["f"]["val"]
+        fy = data["f"]["val"]
+        cx= data["ocx"]["val"]
+        cy = data["ocy"]["val"]
+        k1 = data["ok1"]["val"]
+        k2 = data["ok2"]["val"]
+        k3 = data["ok3"]["val"]
+        p1 = data["op1"]["val"]
+        p2 = data["op2"]["val"]
+
+        camera2_intrinsic = np.array([[fx, 0, cx],
+                                    [0, fy, cy],
+                                    [0, 0, 1]])
+
+        # Camera 2 Distortion Parameters
+        camera2_distortion = np.array([k1, k2, p1, p2, k3])
+
+        matched_labels, camera1_2D, camera2_2D, camera2_3D_remainder, camera_1_3D, camera_2_3D = self.get_matching_coordinates(self.widgets['Camera 11 RGB Right'].ret_sorted_clusters(), 
+                                                                                                                 self.widgets['Camera 72 RGB'].ret_sorted_clusters(), 
+                                                                                                                 self.widgets['Camera 11 RGB Right'].ret_3D_coords(),
+                                                                                                                 self.widgets['Camera 72 RGB'].ret_3D_coords())
+
+        
+        width2, height2 = self.widgets['Camera 72 RGB'].ret_width_height()
+        ret, camera2_matrix, camera2_dist_coeffs, _, _ = cv2.calibrateCamera([camera_2_3D],
+                                                                            [camera2_2D],
+                                                                            (width2, height2),
+                                                                            camera2_intrinsic,
+                                                                            camera2_distortion,
+                                                                            flags=cv2.CALIB_USE_INTRINSIC_GUESS)
+        
+
+        # PnP for Camera 2
+        _, self.camera72_rotation_vector, self.camera72_translation_vector = cv2.solvePnP(camera_1_3D,
+                                                                                camera2_2D,
+                                                                                camera2_matrix,
+                                                                                camera2_dist_coeffs)
+
+        # Relative pose estimation
+        relative_rotation_vector, relative_translation_vector, _, _, _, _, _, _, _, _ = cv2.composeRT(self.camera11_R_rotation_vector,
+                                                                            self.camera11_R_translation_vector,
+                                                                            self.camera72_rotation_vector,
+                                                                            self.camera72_translation_vector)
 
         relative_rotation_matrix, _ = cv2.Rodrigues(relative_rotation_vector)
    
@@ -295,7 +419,7 @@ class TriangulateImage (QtWidgets.QWidget):
         # Transforming 3D coordinates from Camera 2 to Camera 1's coordinate system
         camera2_3d_points_transformed = []
 
-        for point in self.process_data(self.widgets['Camera 11 RGB Right'].ret_3D_coords()):
+        for point in camera2_3D_remainder:
             # Convert 3D point to homogeneous coordinates
             point_homogeneous = np.hstack((point, 1)).reshape(4, 1)
             
@@ -315,12 +439,12 @@ class TriangulateImage (QtWidgets.QWidget):
         arrow_length = 10
 
         # Convert rotation vector to rotation matrix
-        rotation_matrix_1, _ = cv2.Rodrigues(camera1_rotation_vector)
+        rotation_matrix_1, _ = cv2.Rodrigues(self.camera11_R_rotation_vector)
         # Calculate the endpoint of the arrow based on camera position and direction
         arrow_end_1 = rotation_matrix_1.T @ np.array([0, 0, arrow_length])
 
         # Convert rotation vector to rotation matrix
-        rotation_matrix_2, _ = cv2.Rodrigues(camera2_rotation_vector)
+        rotation_matrix_2, _ = cv2.Rodrigues(self.camera72_rotation_vector)
         # Calculate the endpoint of the arrow based on camera position and direction
         arrow_end_2 = rotation_matrix_2.T @ np.array([0, 0, arrow_length])
 
@@ -328,22 +452,17 @@ class TriangulateImage (QtWidgets.QWidget):
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
 
-        # Plot the camera position as a red arrow
-        origin_1 = camera1_translation_vector.flatten()
-        ax.quiver(*origin_1, *arrow_end_1, color='red')
+        origin_2 = self.camera72_translation_vector.flatten()
 
-        # Plot the camera position as a red arrow
-        origin_2 = camera2_translation_vector.flatten()
-        ax.quiver(*origin_2, *arrow_end_2, color='red')
-
-        arrow_params = [origin_1, arrow_end_1]
-        self.overall_camera_pose.append(arrow_params)
         arrow_params = [origin_2, arrow_end_2]
         self.overall_camera_pose.append(arrow_params)
 
         # Plot the 3D points
         for points in self.overall_3D_points:
             ax.scatter(points[:, 0], points[:, 1], points[:, 2], c='blue')
+
+        for arrow in self.overall_camera_pose:
+            ax.quiver(*arrow[0], *arrow[1], color='red')
 
         # Set axes labels and display the plot
         ax.set_xlabel('X')
