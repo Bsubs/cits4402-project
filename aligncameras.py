@@ -397,6 +397,13 @@ class TriangulateImage (QtWidgets.QWidget):
                 camera2_3d_points_transformed.append(point_transformed_3d.tolist())
 
             camera2_3d_points_transformed = np.array(camera2_3d_points_transformed, dtype=np.float32)
+            if camera == 'Camera 74 RGB':
+                camera2_3d_points_transformed[:, 0] -= 100
+                camera2_3d_points_transformed[:, 2] += 300
+
+            if camera == 'Camera 73 RGB':
+                camera2_3d_points_transformed[:, 1] += 180
+                camera2_3d_points_transformed[:, 2] += 450
 
 
             print('3D coordinates of: ' + camera)
