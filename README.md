@@ -9,16 +9,22 @@ CITS4402 Project - Joo Kai Tay (22489437), Yusi Zhang (23458522), Runtian Liang 
 5. Enter the command `python main.py` to run the application
 
 ## Navigating the GUI
-- Load the image in question using the 'Load Image' button
-    - This will display the original image on the left side of the screen
-    - This will also display a masked image where pixels of red, blue and green have been segmented
-- Use the `tminColor` and `tdiffColor` sliders to adjust the thresholds in the image until your desired segmenting has been achieved 
-- Click the `Connected Components Analysis` Button
-    - This will display the clusters which have been filtered with connected components analysis on the left hand side of the screen
-    - Adjust the settings with `tminArea`, `tmaxArea` and `taxisRatio` to adjust the minimum area of clusters, maximum area of clusters and roundess of clusters detected
-- Click the 'Detect Hexagons' button
-    - On the right side of the screen, only clusters that are part of a hexagonal target are displayed. 
-        - Adjust the `tellipse` field to adjust the sensitivity of this operation
+- When you open the application you will be on the `Perform Image Segmentation` tab
+    - Click the `Perform Image Segmentation for all Cameras`
+        - You should see the message `Running image segmentation, please wait patiently` appear on your screen
+        - This function is computationally intensive and may take a few minutes to run even on a fast PC. Please do not click on the screen while the message above is still displayed. This may cause a crash of the application.
+        - When the message `Image Segmentation Completed` is displayed, the image segmentation is completed.
+    - You may then navigate the tabs along the top of the application
+        - The tabs are labelled according to which camera the image came from
+        - In these tabs you will see 4 images:
+            - The original image
+            - The result of the rough segmentation mask as of section 1.2 of the thesis
+            - The detected targets with squares drawn over the targets as of section 1.3 of the thesis
+            - The detected targets with their corresponding strings after the subpixel target alignment as of section 1.4 of the thesis
+            - The optimal hyperparameters to achieve this segmentation have been preloaded and are visible on the right of the sliders. You may adjust these as you wish but the results will most likely be worse than with the provided optimal hyperparameters
+    - Navigate to the last tab `3D render of room`
+        - Click the button `Calibrate Stereo Camera` to see the 3D render of the calibration of the stereo camera 11
+        - Click the button `Calibrate All` to see the 3D render of the entire  holographic acquisition rig
 
 ## Purpose and Design of the Application
 **Purpose**
@@ -27,7 +33,7 @@ The purpose of the application is to implement the callibration process for a ho
 **Design**
 The project was implemented in Python using a variety of libraries for image processing. The GUI code was developed using PyQt5. Detailed explanations of each function will be provided below. 
 
-## Implementation
+## Implementation of Tasks 1 & 2
 
 ### generate_mask()
 - This function generates the initial segmentation mask based on certain threshold values
@@ -55,21 +61,13 @@ The project was implemented in Python using a variety of libraries for image pro
 
 ### find_target_label()
 - Color Temperature Compensation: This function applies color temperature compensation to the image. This implies that the function corrects the colors in the image to match the colors in the original scene, helping to eliminate color cast caused by different light sources.
-
 - Reference Colors Identification: The function identifies red, green, and blue as the reference colors in the image.
-
 - Pixel Color Analysis: For every pixel in the image, this function determines the closest reference color and applies color temperature compensation to it. If the color component is greater than a set threshold, the color is assigned to the pixel.
-
 - Image Processing: The function processes the image by setting certain pixels to black based on defined conditions.
-
 - HSV Conversion and Masking: The function then converts the processed image to HSV color space and applies masks for blue, red, and green colors.
-
 - Contours and Centroids Calculation: For each color mask, the function calculates contours and their centroids.
-
 - Clustering: The function then clusters these centroids and sorts them from left to right.
-
 - Sorting Points Clockwise: The function sorts points in each cluster clockwise, starting from the blue point.
-
 - Label Assignment: Finally, the function assigns labels to each point in the cluster, based on their position and color.
 
 ### align_clusters()
@@ -83,6 +81,11 @@ The project was implemented in Python using a variety of libraries for image pro
 - Display the aligned image using the display_image() function.
 - Update self.sorted_cluster with float
 
+## Implementation of Task 3
+- In task 3, camera 11 was chosen as the reference camera due to the stereo imaging. We were able to use this to calculate the depth information of the points through triangulation.
+- The targets detected in camera 11 were then matched with the targets identified in the image from camera 71 through the strings found in the find_target_label() function
+- SolvePnP was used to get the rotation and translation vectors of camera 71 relative to camera 11. The rotation and translation vector was used to transform 3D coordinates from Camera 71 to Camera 11's coordinate system.
+- This process was repeated with each camera until the final solution was reached.
 
 ## Tuning Hyperparameters
 
@@ -109,12 +112,12 @@ The project was implemented in Python using a variety of libraries for image pro
 ### Camera 71 RGB 
 This one needs fixing.
 
-- tminColor:   99
-- tdiffColor:  17
-- tminArea:    13
-- tmaxArea:    111
+- tminColor:   10799
+- tdiffColor:  30
+- tminArea:    10
+- tmaxArea:    178
 - taxisRatio:  1.8
-- tellipse:    7
+- tellipse:    120
 
 ### Camera 72 RGB 
 

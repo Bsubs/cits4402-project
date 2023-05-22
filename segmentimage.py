@@ -37,6 +37,7 @@ class MaskImage (QtWidgets.QWidget):
     def __init__(self, param_dict, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        # Read in tuned hyperparameters from JSON file
         self.tminColor = param_dict.get('tminColor')
         self.tdiffColor = param_dict.get('tdiffColor')
         self.tminArea = param_dict.get('tminArea')     
@@ -45,14 +46,13 @@ class MaskImage (QtWidgets.QWidget):
         self.taxisRatio = param_dict.get('taxisRatio')
         self.tellipse = param_dict.get('tellipse')
         self.jsonName = param_dict.get('jsonName')
+        self.imgName = param_dict.get('imgName')
         self.distance_threshold=1
 
         # Creates the widgets for colour thresholding
         # Create load image widget & label
-        self.load_image_btn = QPushButton("Load Image", self)
-        self.load_image_btn.clicked.connect(self.load_image)
         self.original_image_label = QLabel(self)
-        self.run_all_btn = QPushButton("Run All", self)
+        self.run_all_btn = QPushButton("Perform Image Segmentation", self)
         self.run_all_btn.clicked.connect(self.run_all)
         # Creates the widgets for tminColor and tdiffColor (label, slider, value label)
         self.tminColor_slider = QSlider(Qt.Horizontal)
@@ -65,8 +65,6 @@ class MaskImage (QtWidgets.QWidget):
         self.tdiffColor_slider.setMaximum(200)
         tdiffColor_label = QLabel("tdiffColor: ")
         self.tdiffColor_value_label = QLabel(str(self.tdiffColor))
-        # Creates the label that displays the rough image
-        self.masked_image_label = QLabel(self)
 
 
         # Creates the widgets for connected component analysis
@@ -91,12 +89,6 @@ class MaskImage (QtWidgets.QWidget):
         self.taxisRatio_slider.valueChanged.connect(self.update_taxisRatio)
         taxisRatio_label = QLabel("taxisRatio: ")
         self.taxisRatio_value_label = QLabel(str(self.taxisRatio))
-        self.cca_btn = QPushButton("Connected Components Analysis", self)
-        self.cca_btn.clicked.connect(self.filter_clusters)
-
-
-        # Creates the label to display the cca image
-        self.cca_label = QLabel(self)
 
 
         # Creates the widgets for hexagon detection
@@ -107,29 +99,17 @@ class MaskImage (QtWidgets.QWidget):
         self.tellipse_slider.valueChanged.connect(self.update_tellipse)
         tellipse_label = QLabel("tellipse: ")
         self.tellipse_value_label = QLabel(str(self.tellipse))
-        self.cd_btn = QPushButton("Detect Hexagons", self)
-        self.cd_btn.clicked.connect(self.find_target_clusters)
 
 
         # Creates the widgets for labeling and alignment
         self.lb_label = QLabel(self)
-        self.align_label = QLabel(self)
-        self.distortion_label = QLabel(self)
+        self.string_label = QLabel(self)
         self.get3D_label=QLabel(self)
-        self.lb_btn = QPushButton("labling", self)
-        self.align_btn = QPushButton("alignment", self)
-        self.distortion_btn = QPushButton("distortion", self)
-        self.get3D_btn = QPushButton("get3D", self)
-        self.lb_btn.clicked.connect(self.find_target_lable)
-        self.align_btn.clicked.connect(self.align_clusters)
-        self.distortion_btn.clicked.connect(self.distortion)
-        self.get3D_btn.clicked.connect(self.get3D)
         # Create grid layout
         self.grid_layout = QGridLayout()
         self.setLayout(self.grid_layout)
 
         # Add widgets to grid layout
-        self.grid_layout.addWidget(self.load_image_btn, 0, 0, 1, 4)
         self.grid_layout.addWidget(self.run_all_btn, 1, 0, 1, 4)
         self.grid_layout.addWidget(tminColor_label, 2, 0)
         self.grid_layout.addWidget(self.tminColor_slider, 2, 1, 1, 3)
@@ -137,8 +117,6 @@ class MaskImage (QtWidgets.QWidget):
         self.grid_layout.addWidget(tdiffColor_label, 3, 0)
         self.grid_layout.addWidget(self.tdiffColor_slider, 3, 1, 1, 3)
         self.grid_layout.addWidget(self.tdiffColor_value_label, 3, 4)
-        self.grid_layout.addWidget(self.original_image_label, 4, 1)
-        self.grid_layout.addWidget(self.masked_image_label, 4, 2)
         self.grid_layout.addWidget(tminArea_label, 5, 0)
         self.grid_layout.addWidget(self.tminArea_slider, 5, 1, 1, 3)
         self.grid_layout.addWidget(self.tminArea_value_label, 5, 4)
@@ -154,39 +132,25 @@ class MaskImage (QtWidgets.QWidget):
         self.grid_layout.addWidget(tellipse_label, 9, 0)
         self.grid_layout.addWidget(self.tellipse_slider, 9, 1, 1, 3)
         self.grid_layout.addWidget(self.tellipse_value_label, 9, 4)
-        self.grid_layout.addWidget(self.cca_btn, 10, 0, 1, 4)
-        self.grid_layout.addWidget(self.cd_btn, 11, 0, 1, 4)
-        self.grid_layout.addWidget(self.cca_label, 12, 1)
-        self.grid_layout.addWidget(self.hexagon_label, 12, 2)
-        self.grid_layout.addWidget(self.lb_btn, 13, 0, 1, 4)
-        self.grid_layout.addWidget(self.lb_label, 14, 1)
-        self.grid_layout.addWidget(self.align_label, 14, 2)
-        # self.grid_layout.addWidget(distance_threshold_label, 14, 0)
-        # self.grid_layout.addWidget(self.distance_threshold_slider, 14, 1,1,3)
-        self.grid_layout.addWidget(self.align_btn, 15, 0, 1, 4)
-        self.grid_layout.addWidget(self.distortion_btn, 16, 0, 1, 4)
-        self.grid_layout.addWidget(self.distortion_label, 17, 1)
-        self.grid_layout.addWidget(self.get3D_label, 17, 2)
-        self.grid_layout.addWidget(self.get3D_btn, 18, 0, 1, 4)
+        self.grid_layout.addWidget(self.original_image_label, 19, 1)
+        self.grid_layout.addWidget(self.hexagon_label, 19, 2)
+        self.grid_layout.addWidget(self.lb_label, 20, 1)
+        self.grid_layout.addWidget(self.string_label, 20, 2)
+        self.grid_layout.addWidget(self.get3D_label, 21, 1)
         self.grid_layout.setColumnStretch(2, 1)  # add stretch to the empty cell
 
-
+    # Loads the image that we are going to segment and label
     def load_image(self):
-        options = QFileDialog.Options()
-        file_name, _ = QFileDialog.getOpenFileName(
-            self,
-            "Open Image",
-            "",
-            "Images (*.png *.jpg *.bmp);;All Files (*)",
-            options=options,
-        )
-        if file_name:
-            self.original_image = cv2.imread(file_name)
+        # auto loads the image based on the name provided
+        file_name = os.path.join("data", "images", self.imgName)
+        self.original_image = cv2.imread(file_name)
 
-            self.display_image(self.original_image, self.original_image_label)
-            # Generate initial segmentation mask
-            self.generate_mask()
+        # display the original image
+        self.display_image(self.original_image, self.original_image_label)
+        # Generate initial segmentation mask
+        self.generate_mask()
 
+    # this function displays the specified image in the specified label
     def display_image(self, img, label):
 
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -197,6 +161,7 @@ class MaskImage (QtWidgets.QWidget):
         label.setPixmap(pixmap)
         label.setScaledContents(True)
 
+    # Section 1.2 rough target detection, segments image based on tmincolor and tdiffcolor
     def generate_mask(self):
 
         # Compute minimum and maximum intensities for each pixel
@@ -214,9 +179,7 @@ class MaskImage (QtWidgets.QWidget):
             self.original_image, self.original_image, mask=mask
         )
 
-        # Update image label with new image
-        self.display_image(self.masked_image, self.masked_image_label)
-
+    # Section 1.2 rough target detection, performs connected component analysis on clusters
     def filter_clusters(self):
         # Convert image to grayscale
         gray_image = cv2.cvtColor(self.masked_image, cv2.COLOR_BGR2GRAY)
@@ -259,8 +222,8 @@ class MaskImage (QtWidgets.QWidget):
         self.eigen_image = cv2.bitwise_and(
             self.masked_image, self.masked_image, mask=cluster_mask
         )
-        self.display_image(self.eigen_image, self.cca_label)
 
+    # Section 1.2 rough target detection, fitting an ellipse on the closest 6 points
     def find_target_clusters(self):
         # Find the five nearest clusters for each cluster
         centroids = np.array([prop.centroid for prop in self.props])
@@ -325,10 +288,7 @@ class MaskImage (QtWidgets.QWidget):
         self.image = target_image
         self.target_clusters = target_clusters
 
-        # for cluster_index in target_clusters:
-        #     cluster_label = self.props[cluster_index].label
-        #     cluster_pixels = np.argwhere(self.labeled_image == cluster_label)
-
+    # Section 1.3 detected target analysis
     def find_target_lable(self):
         def color_temperature_compensation(image, gain_factors):
             return np.clip(image * gain_factors, 0, 255).astype(np.uint8)
@@ -475,7 +435,7 @@ class MaskImage (QtWidgets.QWidget):
         green_mask = cv2.inRange(hsv_image, lower_green, upper_green)
 
         # Create a copy of the original image to draw markers on
-        marked_image = self.image.copy()
+        marked_image = self.original_image.copy()
 
         # Find contours in the mask
         contours1, _ = cv2.findContours(
@@ -542,15 +502,17 @@ class MaskImage (QtWidgets.QWidget):
             # Calculate the bounding rectangle for the contour
             x, y, w, h = cv2.boundingRect(cnt)
 
-            # Draw a green rectangle around the blue pixel
-            cv2.rectangle(marked_image, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            # Draw a blue rectangle around the blue pixel
+            
+            cv2.rectangle(marked_image, (x, y), (x + w, y + h), (255, 0, 0), 2)
+            
 
 
         for cnt in contours2:
             # Calculate the bounding rectangle for the contour
             x, y, w, h = cv2.boundingRect(cnt)
 
-            # Draw a blue rectangle around the red pixel
+            # Draw a red rectangle around the red pixel
             cv2.rectangle(marked_image, (x, y), (x + w, y + h), (0, 0, 255), 2)
 
 
@@ -558,8 +520,8 @@ class MaskImage (QtWidgets.QWidget):
             # Calculate the bounding rectangle for the contour
             x, y, w, h = cv2.boundingRect(cnt)
 
-            # Draw a red rectangle around the green pixel
-            cv2.rectangle(marked_image, (x, y), (x + w, y + h), (255, 0, 0), 2)
+            # Draw a green rectangle around the green pixel
+            cv2.rectangle(marked_image, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
 
         # Calculate the center point for each color of the contour and add to the list of rectangles
@@ -633,6 +595,8 @@ class MaskImage (QtWidgets.QWidget):
         sorted_clusters_clockwise = sort_clusters_clockwise(
             clusters, blue_rects)
         self.sorted_cluster=sorted_clusters_clockwise
+        
+        self.display_image(marked_image, self.lb_label)
 
         for cluster in sorted_clusters_clockwise:
             blue_rect = cluster[0]  # extract blue point
@@ -654,43 +618,45 @@ class MaskImage (QtWidgets.QWidget):
                         label += 'G'
                         break
 
+
             # Assign the resulting labels to the blue points
-            blue_rect['label'] = f"HexaTarget_{label}_1"
+            blue_rect['label'] = f"{label}_1"
 
-            # # Add a label next to the blue rectangle
-            # cv2.putText(marked_image, blue_rect['label'], (blue_rect['x'], blue_rect['y'] - 5),
-            #             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
-
-
-            # # Add labels for other points sorted clockwise
-            # for i, point in enumerate(clockwise_points, start=2):
-            #     point_rect = next(
-            #         rect for rect in all_rects if rect['center'] == point['center'])
-            #     point_label = f"HexaTarget_{label}_{i}"
-
-            #     # Calculate text position
-            #     if i == 4:
-            #         text_position = (
-            #             point_rect['x'], point_rect['y'] + point_rect['h'] + 20)
-            #     elif i in [5, 6]:
-            #         text_position = (point_rect['x'] - 90, point_rect['y'])
-            #     else:
-            #         text_position = (point_rect['x'], point_rect['y'] - 5)
-
-            #     # Add a label next to the corresponding rectangle
-            #     cv2.putText(marked_image, point_label, text_position,
-            #                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
-            #     point_rect = next(
-            #         rect for rect in all_rects if rect['center'] == point['center'])
-            #     point_label = f"HexaTarget_{label}_{i}"
-
-            #     # Add a label next to the corresponding rectangle
-            #     cv2.putText(marked_image, point_label, (point_rect['x'], point_rect['y'] - 5),
-            #                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+            # Add a label next to the blue rectangle
+            cv2.putText(marked_image, blue_rect['label'], (blue_rect['x'], blue_rect['y'] - 5),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
 
 
-        self.display_image(marked_image, self.lb_label)
+            # Add labels for other points sorted clockwise
+            for i, point in enumerate(clockwise_points, start=2):
+                point_rect = next(
+                    rect for rect in all_rects if rect['center'] == point['center'])
+                point_label = f"{label}_{i}"
 
+                # Calculate text position
+                if i == 4:
+                    text_position = (
+                        point_rect['x'], point_rect['y'] + point_rect['h'] + 20)
+                elif i in [5, 6]:
+                    text_position = (point_rect['x'] - 90, point_rect['y'])
+                else:
+                    text_position = (point_rect['x'], point_rect['y'] - 5)
+
+                # Add a label next to the corresponding rectangle
+                cv2.putText(marked_image, point_label, text_position,
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+                point_rect = next(
+                    rect for rect in all_rects if rect['center'] == point['center'])
+                point_label = f"{label}_{i}"
+
+                # Add a label next to the corresponding rectangle
+                cv2.putText(marked_image, point_label, (point_rect['x'], point_rect['y'] - 5),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+
+
+        self.display_image(marked_image, self.string_label)
+
+    # Section 1.4 subpixel target alignment
     def align_clusters(self):
         def get_cluster(centroid, image,color, distance_threshold, assigned_pixels):
             cluster = []
@@ -840,30 +806,9 @@ class MaskImage (QtWidgets.QWidget):
         # Convert the aligned_image back to the original image type (e.g., uint8)
         print(self.sorted_cluster)
         aligned_image = aligned_image.astype(np.uint8)
-        self.display_image(aligned_image, self.align_label)
 
         self.newimage = aligned_image
 
-    def distortion(self):
-        
-        # Camera internal parameter matrix[fx  0  cx]
-                                         #[0  fy  cy]
-                                         #[0   0   1]
-        self.camera_matrix = np.array([[420, 0, 424],
-                                        [0, 420, 240],
-                                        [0, 0, 1]])
- 
-        # distortion coefficients(ok1, ok2, ok3, op1, op2)
-        self.distortion_coefficients = np.array([0.0005870087770745158, 0.003473134944215417, -0.008524137549102306, 0.000652475340757519, 0.0009333859197795391])
-    
-        # remove distortion
-        undistorted_img = cv2.undistort(self.newimage, self.camera_matrix, self.distortion_coefficients)
-        self.display_image(undistorted_img, self.distortion_label)
-
-        #print(self.sorted_cluster)
-        
-        return TRUE
-    
 
     def get3D(self):
         json_path = os.path.join("data", "camera parameters", self.jsonName)
@@ -988,39 +933,46 @@ class MaskImage (QtWidgets.QWidget):
         self.tminColor_value_label.setText(str(value))
         # Regenerate segmentation mask
         self.generate_mask()
-
+    
+    # Slider value update functions
     def update_tdiffColor(self, value):
         self.tdiffColor = value
         self.tdiffColor_value_label.setText(str(value))
         # Regenerate segmentation mask
         self.generate_mask()
-
+    
+    # Slider value update functions
     def update_tminArea(self, value):
         self.tminArea = value
         self.tminArea_value_label.setText(str(value))
-
+    
+    # Slider value update functions
     def update_tmaxArea(self, value):
         self.tmaxArea = value
         self.tmaxArea_value_label.setText(str(value))
     
+    # Slider value update functions
     def update_tDistance(self, value):
             self.tDistance = value
             self.tDistance_value_label.setText(str(value))
-
+    
+    # Slider value update functions
     def update_taxisRatio(self, value):
         self.taxisRatio = value
         self.taxisRatio_value_label.setText(str(value))
-
+    
+    # Slider value update functions
     def update_tellipse(self, value):
         self.tellipse = value
         self.tellipse_value_label.setText(str(value))
 
+    # Used to run all functions
     def run_all(self):
+        self.load_image()
         self.filter_clusters()
         self.find_target_clusters()
         self.find_target_lable()
         self.align_clusters()
-        self.distortion()
         self.get3D()
     
     # def update_distance_threshold(self, value):

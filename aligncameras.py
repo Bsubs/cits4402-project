@@ -34,11 +34,7 @@ class TriangulateImage (QtWidgets.QWidget):
         self.overall_rvec_tvec = []
 
         # Camera Calibration buttons
-        self.calibrate_11_L_btn = QPushButton("Calibrate 11 Left", self)
-        self.calibrate_11_L_btn.clicked.connect(self.calibrate_11_L)
-        self.original_image_label = QLabel(self)
-
-        self.calibrate_11_R_btn = QPushButton("Calibrate 11 Right", self)
+        self.calibrate_11_R_btn = QPushButton("Calibrate Stereo Camera", self)
         self.calibrate_11_R_btn.clicked.connect(self.calibrate_11_R)
 
         self.calibrate_all_btn = QPushButton("Calibrate All", self)
@@ -49,26 +45,9 @@ class TriangulateImage (QtWidgets.QWidget):
         self.setLayout(self.grid_layout)
 
         # Add widgets to grid layout
-        self.grid_layout.addWidget(self.calibrate_11_L_btn, 0, 0, 1, 4)
         self.grid_layout.addWidget(self.calibrate_11_R_btn, 1, 0, 1, 4)
         self.grid_layout.addWidget(self.calibrate_all_btn, 2, 0, 1, 4)
         self.grid_layout.setColumnStretch(2, 1)  # add stretch to the empty cell
-
-    def load_image(self):
-        options = QFileDialog.Options()
-        file_name, _ = QFileDialog.getOpenFileName(
-            self,
-            "Open Image",
-            "",
-            "Images (*.png *.jpg *.bmp);;All Files (*)",
-            options=options,
-        )
-        if file_name:
-            self.original_image = cv2.imread(file_name)
-
-            self.display_image(self.original_image, self.original_image_label)
-            # Generate initial segmentation mask
-            self.generate_mask()
 
     def display_image(self, img, label):
 
@@ -80,6 +59,7 @@ class TriangulateImage (QtWidgets.QWidget):
         label.setPixmap(pixmap)
         label.setScaledContents(True)
 
+    # Strips the labels from the point array
     def process_data(self, data):
         coordinates = []
         for targets in data:
@@ -88,7 +68,9 @@ class TriangulateImage (QtWidgets.QWidget):
                     coordinates.append(target['center'])
         return np.array(coordinates, dtype=np.float32)
     
+    # Function to perform initial calibration of the reference camera
     def calibrate_11_L(self):
+        # Retrieve 2D and 32 coordinates from camera 11L
         stuff1 = self.widgets['Camera 11 RGB Left'].ret_sorted_clusters()
         sorted_cluster_2D = np.array(self.process_data(stuff1), dtype=np.float32)
 
@@ -122,19 +104,8 @@ class TriangulateImage (QtWidgets.QWidget):
         ax = fig.add_subplot(111, projection='3d')
         ax.scatter(sorted_cluster_3D[:, 0], sorted_cluster_3D[:, 1], sorted_cluster_3D[:, 2], c='blue')
 
-        # Plot the camera position as a red arrow
-        origin = translation_vector.flatten()
-        ax.quiver(*origin, *arrow_end, color='red')
 
-        arrow_params = [np.array(origin, dtype=np.float32), np.array(arrow_end, dtype=np.float32)]
-        # self.overall_camera_pose.append(arrow_params)
-
-        # Set axes labels and display the plot
-        ax.set_xlabel('X')
-        ax.set_ylabel('Y')
-        ax.set_zlabel('Z')
-        plt.show()
-
+    # Function to match coordinates based on the target string obtained from segmentimage.py
     def get_matching_coordinates(self, coords_2D1, coords_2D2, coords_3D1, coords_3D2):
         # Flatten the data structures into lists of labels
         labels_1 = [item['label'] for sublist in coords_2D1 for item in sublist if 'label' in item]
@@ -188,8 +159,9 @@ class TriangulateImage (QtWidgets.QWidget):
 
         return matching_labels, np.array(coordinates_2D_1, dtype=np.float32), np.array(coordinates_2D_2, dtype=np.float32), np.array(coordinates_2D_remainder, dtype=np.float32), np.array(coordinates_3D_1, dtype=np.float32), np.array(coordinates_3D_2, dtype=np.float32)
 
+    # Calibrate the stereo camera 11R
     def calibrate_11_R(self):
-
+        self.calibrate_11_L()
         # Camera 11_L Intrinsic Parameters
         camera_11_L_json = self.widgets['Camera 11 RGB Left'].jsonName
         json_path_L = os.path.join("data", "camera parameters", camera_11_L_json)
@@ -334,7 +306,7 @@ class TriangulateImage (QtWidgets.QWidget):
         ax.set_zlabel('Z')
         plt.show()
 
-
+    # Calibrate the remaining cameras and return the 3D solution
     def calibrate_all(self):
         
         # The order of cameras that we are going to calibrate. 
