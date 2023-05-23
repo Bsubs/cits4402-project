@@ -99,10 +99,6 @@ class TriangulateImage (QtWidgets.QWidget):
         # Calculate the endpoint of the arrow based on camera position and direction
         arrow_end = rotation_matrix.T @ np.array([0, 0, arrow_length])
 
-        # Plot the 3D points
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3d')
-        ax.scatter(sorted_cluster_3D[:, 0], sorted_cluster_3D[:, 1], sorted_cluster_3D[:, 2], c='blue')
 
 
     # Function to match coordinates based on the target string obtained from segmentimage.py
@@ -381,8 +377,7 @@ class TriangulateImage (QtWidgets.QWidget):
             # arrow_end_2 = rotation_matrix_2.T @ np.array([0, 0, arrow_length])
             origin_2=relative_translation_vector.flatten()/5
             # origin_2 = current_camera_translation_vector.flatten() /10
-            print('arrow_end_2',arrow_end_2)
-            print('origin_2',origin_2)
+
             arrow_params = [np.array(origin_2, dtype=np.float32), np.array(arrow_end_2, dtype=np.float32)]
             self.overall_camera_pose.append(arrow_params)
             
@@ -415,6 +410,7 @@ class TriangulateImage (QtWidgets.QWidget):
             
             camera2_3d_points_labelled = []
 
+            # These 2 loops add the labels back to the 3D points so they can be matched in future iterations
             for k, label in enumerate(non_matched_labels):
                 hexagon = []
                 hexagon.append({'label': label})
@@ -442,34 +438,11 @@ class TriangulateImage (QtWidgets.QWidget):
 
                 camera2_3d_points_labelled.append(hexagon)
 
-            # print('New 3D points:')
-            # print(camera2_3d_points_labelled)
-            # print('Camera13D_size: ' , camera_1_3D.size)
-            # print('camera2_3d_points_transformed_size: ' , camera2_3d_points_transformed.size)
-            # print('matched labels:')
-            # print(matched_labels)
-            # print('non matched labels:')
-            # print(non_matched_labels)
-
-            # if camera == 'Camera 74 RGB':
-            #     camera2_3d_points_transformed[:, 0] -= 100
-            #     camera2_3d_points_transformed[:, 2] += 300
-
-            # if camera == 'Camera 73 RGB':
-            #     camera2_3d_points_transformed[:, 1] += 180
-            #     camera2_3d_points_transformed[:, 2] += 450
-
-
-            # print('3D coordinates of: ' + camera)
-            # print(camera2_3d_points_transformed)
 
             self.overall_3D_points.append(camera2_3d_points_labelled)
 
 
-
-
-
-        # Plot the 3D points
+        # Plot the 3D points for all cameras
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
 

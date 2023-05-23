@@ -137,7 +137,7 @@ class MaskImage (QtWidgets.QWidget):
         self.grid_layout.addWidget(self.lb_label, 20, 1)
         self.grid_layout.addWidget(self.string_label, 20, 2)
         self.grid_layout.addWidget(self.get3D_label, 21, 1)
-        self.grid_layout.setColumnStretch(2, 1)  # add stretch to the empty cell
+        self.grid_layout.setColumnStretch(2, 1)  
 
     # Loads the image that we are going to segment and label
     def load_image(self):
@@ -355,8 +355,6 @@ class MaskImage (QtWidgets.QWidget):
                         if np.count_nonzero(compensated_color) > 1:
                             max_color = get_max_color(
                                 compensated_color, distances, distance_threshold)
-                            # print(
-                            #     f'Input color: {compensated_color}, max color: {max_color}')
                             if max_color is not None:
                                 output_image[y, x] = max_color
                             else:
@@ -532,7 +530,6 @@ class MaskImage (QtWidgets.QWidget):
 
         # Put the center points of the rectangle boxes of all colors into a list
         all_rects = blue_rects + red_rects + green_rects
-        # print(len(all_rects))
 
         # Sort from left to right by the x-coordinate of the center point
         sorted_rects = sorted(all_rects, key=lambda rect: rect['center'][0])
@@ -771,7 +768,6 @@ class MaskImage (QtWidgets.QWidget):
             offset_float = centroid - np.mean(cluster, axis=0)
             # Calculate the aligned centroid by adding the offset to the original centroid
             aligned_centroid_float = centroid + offset_float
-            #print(aligned_centroid_float)
             aligned_centroids_float.append(aligned_centroid_float)
             # Move the points in the cluster based on the calculated offset
             for point in cluster:
@@ -804,7 +800,6 @@ class MaskImage (QtWidgets.QWidget):
                 closest_point = min(aligned_centroids_sorted, key=lambda centroid: distance(centroid, point['center']))
                 point['center'] = tuple(closest_point)
         # Convert the aligned_image back to the original image type (e.g., uint8)
-        # print(self.sorted_cluster)
         aligned_image = aligned_image.astype(np.uint8)
 
         self.newimage = aligned_image
