@@ -1,0 +1,61 @@
+{
+    "exportedStereoRigName": "RealSenseRightToRGB",
+    "ofsrx": {
+        "isSet": 0,
+        "isUncertain": 0,
+        "stddev": 0,
+        "val": 0
+    },
+    "ofsry": {
+        "isSet": 0,
+        "isUncertain": 0,
+        "stddev": 0,
+        "val": 0
+    },
+    "ofsrz": {
+        "isSet": 0,
+        "isUncertain": 0,
+        "stddev": 0,
+        "val": 0
+    },
+    "ofsx": {
+        "isSet": 0,
+        "isUncertain": 0,
+        "stddev": 0,
+        "val": 0
+    },
+    "ofsy": {
+        "isSet": 0,
+        "isUncertain": 0,
+        "stddev": 0,
+        "val": 0
+    },
+    "ofsz": {
+        "isSet": 0,
+        "isUncertain": 0,
+        "stddev": 0,
+        "val": 0
+    },
+    "oofs": {
+        "CovMatTrig": [
+        ],
+        "isSet": 1,
+        "isUncertain": 0,
+        "vals": [
+            -36.1756706237793,
+            1.764229416847229,
+            0.4539019465446472
+        ]
+    },
+    "oofsr": {
+        "CovMatTrig": [
+        ],
+        "isSet": 1,
+        "isUncertain": 0,
+        "vals": [
+            0.0021973957773298025,
+            -0.0025075154844671488,
+            0.001533367088995874
+        ]
+    }
+}

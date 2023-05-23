@@ -1,0 +1,68 @@
+{
+    "Camera 11 RGB Left": {
+        "tminColor": 50,
+        "tdiffColor": 100,
+        "tminArea": 40,
+        "tmaxArea": 150,
+        "tDistance": 100,
+        "taxisRatio": 2.5,
+        "tellipse": 7,
+        "jsonName": "zedLeft720p.json",
+        "imgName": "camera11_left.png"
+    },
+    "Camera 11 RGB Right": {
+        "tminColor": 56,
+        "tdiffColor": 75,
+        "tminArea": 40,
+        "tmaxArea": 116,
+        "tDistance": 27,
+        "taxisRatio": 2.5,
+        "tellipse": 7,
+        "jsonName": "zedRight720p.json",
+        "imgName": "camera11_right.png"
+    },
+    "Camera 71 RGB": {
+        "tminColor": 107,
+        "tdiffColor": 30,
+        "tminArea": 10,
+        "tmaxArea": 178,
+        "tDistance": 20,
+        "taxisRatio": 1.8,
+        "tellipse": 120,
+        "jsonName": "realsense71RGB.json",
+        "imgName": "camera71.png"
+    },
+    "Camera 72 RGB": {
+        "tminColor": 80,
+        "tdiffColor": 99,
+        "tminArea": 6,
+        "tmaxArea": 53,
+        "tDistance": 20,
+        "taxisRatio": 2.3,
+        "tellipse": 7,
+        "jsonName": "realsense72RGB.json",
+        "imgName": "camera72.png"
+    },
+    "Camera 73 RGB": {
+        "tminColor": 99,
+        "tdiffColor": 99,
+        "tminArea": 6,
+        "tmaxArea": 92,
+        "tDistance": 20,
+        "taxisRatio": 2.2,
+        "tellipse": 4,
+        "jsonName": "realsense73RGB.json",
+        "imgName": "camera73.png"
+    },
+    "Camera 74 RGB": {
+        "tminColor": 65,
+        "tdiffColor": 40,
+        "tminArea": 20,
+        "tmaxArea": 200,
+        "tDistance": 23,
+        "taxisRatio": 1.4,
+        "tellipse": 30,
+        "jsonName": "realsense74RGB.json",
+        "imgName": "camera74.png"
+    }
+}
