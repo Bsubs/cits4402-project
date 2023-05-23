@@ -843,9 +843,6 @@ class MaskImage (QtWidgets.QWidget):
         x2, y2 = points[1]
         hexagon_size = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
 
-        # Initialize 3D plot
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3d')
 
         # Initialize array to store 3D coordinates for export
         self.coords3D = []
@@ -886,33 +883,9 @@ class MaskImage (QtWidgets.QWidget):
                 
                 # Append the scaled coordinates to hex3D
                 hex3D.append({'center': (x_scaled, y_scaled, z_scaled)})
-
-                # Plot the 3D coordinates
-                ax.scatter(x_scaled, y_scaled, z_scaled, c='b', marker='o')
-                #print(f"Point: ({x_scaled:.2f}, {y_scaled:.2f}, {z_scaled:.2f})")
             
             self.coords3D.append(hex3D)
 
-        #print(self.coords3D)
-
-        # Set labels for the axes
-        ax.set_xlabel('X')
-        ax.set_ylabel('Y')
-        ax.set_zlabel('Z')
-
-        # Set the aspect ratio of the plot
-        ax.set_box_aspect([1, 1, 1])
-
-        # plt.show()
-
-        # Save as png
-        buf = io.BytesIO()
-        plt.savefig(buf, format='png')
-        buf.seek(0)
-        img = Image.open(buf)
-        img = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
-
-        self.display_image(img, self.get3D_label)
 
     def ret_sorted_clusters(self):
         return self.sorted_cluster
@@ -974,8 +947,4 @@ class MaskImage (QtWidgets.QWidget):
         self.find_target_lable()
         self.align_clusters()
         self.get3D()
-    
-    # def update_distance_threshold(self, value):
-    #     self.distance_threshold = value
-    #     self.distance_threshold_value_label.setText(str(value))
 

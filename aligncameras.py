@@ -99,10 +99,6 @@ class TriangulateImage (QtWidgets.QWidget):
         # Calculate the endpoint of the arrow based on camera position and direction
         arrow_end = rotation_matrix.T @ np.array([0, 0, arrow_length])
 
-        # Plot the 3D points
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3d')
-        ax.scatter(sorted_cluster_3D[:, 0], sorted_cluster_3D[:, 1], sorted_cluster_3D[:, 2], c='blue')
 
 
     # Function to match coordinates based on the target string obtained from segmentimage.py
@@ -345,23 +341,13 @@ class TriangulateImage (QtWidgets.QWidget):
                                                                                                                     self.widgets[camera].ret_sorted_clusters(), 
                                                                                                                     self.overall_3D_points[i-1],
                                                                                                                     self.widgets[camera].ret_3D_coords())
-
-            # Get image size
-            width2, height2 = self.widgets[camera].ret_width_height()
-            # Get the camera calibration matrices
-            ret, current_camera_matrix, current_camera_dist_coeffs, _, _ = cv2.calibrateCamera(np.array([camera_2_3D], dtype=np.float32),
-                                                                                np.array([camera2_2D], dtype=np.float32),
-                                                                                (width2, height2),
-                                                                                np.array(camera_current__intrinsic, dtype=np.float32),
-                                                                                np.array(camera_current_distortion, dtype=np.float32),
-                                                                                flags=cv2.CALIB_USE_INTRINSIC_GUESS)
             
 
             # PnP for Current Camera
             _, current_camera_rotation_vector, current_camera_translation_vector = cv2.solvePnP(np.array(camera_1_3D, dtype=np.float32),
                                                                                     np.array(camera2_2D, dtype=np.float32),
-                                                                                    np.array(current_camera_matrix, dtype=np.float32),
-                                                                                    np.array(current_camera_dist_coeffs, dtype=np.float32))
+                                                                                    np.array(camera_current__intrinsic, dtype=np.float32),
+                                                                                    np.array(camera_current_distortion, dtype=np.float32))
             
             vectors = [np.array(current_camera_rotation_vector, dtype=np.float32), np.array(current_camera_translation_vector, dtype=np.float32)]
             self.overall_rvec_tvec.append(vectors)
@@ -437,14 +423,6 @@ class TriangulateImage (QtWidgets.QWidget):
             print('non matched labels:')
             print(non_matched_labels)
 
-            # if camera == 'Camera 74 RGB':
-            #     camera2_3d_points_transformed[:, 0] -= 100
-            #     camera2_3d_points_transformed[:, 2] += 300
-
-            # if camera == 'Camera 73 RGB':
-            #     camera2_3d_points_transformed[:, 1] += 180
-            #     camera2_3d_points_transformed[:, 2] += 450
-
 
             print('3D coordinates of: ' + camera)
             print(camera2_3d_points_transformed)
@@ -452,12 +430,12 @@ class TriangulateImage (QtWidgets.QWidget):
             self.overall_3D_points.append(camera2_3d_points_labelled)
 
             # Convert rotation vector to rotation matrix
-            rotation_matrix_2, _ = cv2.Rodrigues(np.array(current_camera_rotation_vector, dtype=np.float32))
+            rotation_matrix_2, _ = cv2.Rodrigues(np.array(relative_rotation_vector, dtype=np.float32))
             # Calculate the endpoint of the arrow based on camera position and direction
             # Define the arrow length for visualization
             arrow_length = 10
             arrow_end_2 = rotation_matrix_2.T @ np.array([0, 0, arrow_length])
-            origin_2 = current_camera_translation_vector.flatten()
+            origin_2 = relative_translation_vector.flatten()
 
             arrow_params = [np.array(origin_2, dtype=np.float32), np.array(arrow_end_2, dtype=np.float32)]
             self.overall_camera_pose.append(arrow_params)

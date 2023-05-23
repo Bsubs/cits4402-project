@@ -93,10 +93,21 @@ The data folder contains the following files:
 - Update self.sorted_cluster with float
 
 ## Implementation of Task 3
-- In task 3, camera 11 was chosen as the reference camera due to the stereo imaging. We were able to use this to calculate the depth information of the points through triangulation.
-- The targets detected in camera 11 were then matched with the targets identified in the image from camera 71 through the strings found in the find_target_label() function
-- SolvePnP was used to get the rotation and translation vectors of camera 71 relative to camera 11. The rotation and translation vector was used to transform 3D coordinates from Camera 71 to Camera 11's coordinate system.
-- This process was repeated with each camera until the final solution was reached.
+- In task 3, we started with calculating the 3D coordinates of the targets in the image from camera 11 using the known size of the hexagons.
+    - The size of the hexagons was provided to us in an email by Dr Nasir
+    - The calculation was done in the `get3D()` function in `segmentimage.py`
+- Using the 3D coordinates that we estimated, we used solve pnp to get the pose of camera 11L with respect to these 3D points.
+    - This was done in the function `calibrate 11_L()`
+    - The other side of the stereo camera was calibrated in `calibrate_11_R()`
+    - With this, we had the pose of both stereo cameras.
+- The `calibrate_all()` function was used to calibrate the remainder of the cameras
+    - We calibrated the cameras in the following sequence: 11L -> 11R -> 71 -> 74 -> 73 -> 72
+    - We load the intrinsic parameters (fx, fy, cx, cy) and the distortion parameters (ok1, ok2, ok3, op1, op2) from the json files provided
+    - Using the `get_matching_coordinates()` function, we match the targets in the 2 cameras we are calibrating using the strings found in task 2
+    - We use the 3D points from the previous camera, the 2D points from the current camera and the camera intrinsic parameters in solvePnP to determine the pose of the current camera relative to the previous camera
+    - We then transfrom the image coordinates from the current camera to the new coordinate system using the rotation and translation vectors from solvePnP
+- The 3D coordinates and pose are plotted in the 3D plot
+
 
 ## Tuning Hyperparameters
 
