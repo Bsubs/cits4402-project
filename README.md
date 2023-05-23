@@ -31,9 +31,18 @@ CITS4402 Project - Joo Kai Tay (22489437), Yusi Zhang (23458522), Runtian Liang 
 The purpose of the application is to implement the callibration process for a holographic acquisition rig.
 
 **Design**
-The project was implemented in Python using a variety of libraries for image processing. The GUI code was developed using PyQt5. Detailed explanations of each function will be provided below. 
+The project was implemented in Python using a variety of libraries for image processing. The GUI code was developed using PyQt5. The project was split into 3 source files:
+- `main.py`: This code initializes the GUI and creates the various tabs and widgets that the user interacts with
+- `segmentimage.py`: This code provides the implementation of tasks 1 & 2.
+- `aligncameras.py`: This code provides the implementation of task 3
 
-## Implementation of Tasks 1 & 2
+**Other files and folders**:
+The data folder contains the following files:
+- `camera parameters`: This folder contains json files describing the intrinsic parameters of the 6 cameras. 
+- `images`: This folder contains the 6 images that we will be using to reconstruct the 3D scene of the room
+- `tuned_hyperparameters.json`: This json file contains the optimal hyperparameters for each image in the implementation of task 1 & 2. This file will be automatically processed by the code to load these hyperparameters into the application. 
+
+## Implementation of Task 1
 
 ### generate_mask()
 - This function generates the initial segmentation mask based on certain threshold values
@@ -58,6 +67,8 @@ The project was implemented in Python using a variety of libraries for image pro
 - For each centroid, compute the residual error of the ellipse fit
 - Check if largest residual error for the six centrois is less than a threshold value tellipse
 - Add the centroid to the target mask
+
+## Implementation of Task 2
 
 ### find_target_label()
 - Color Temperature Compensation: This function applies color temperature compensation to the image. This implies that the function corrects the colors in the image to match the colors in the original scene, helping to eliminate color cast caused by different light sources.

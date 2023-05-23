@@ -1,5 +1,6 @@
 import sys
 import json
+import os
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtWidgets import (
@@ -38,7 +39,8 @@ class MainWindow(QMainWindow):
         self.widgets = {}
 
         # Read data from file and create tabs
-        with open('tuned_hyperparameters.json', 'r') as f:
+        json_path = os.path.join("data", "tuned_hyperparameters.json")
+        with open(json_path, 'r') as f:
             data = json.load(f)
         for name, params in data.items():
             tab = QWidget()
