@@ -532,7 +532,7 @@ class MaskImage (QtWidgets.QWidget):
 
         # Put the center points of the rectangle boxes of all colors into a list
         all_rects = blue_rects + red_rects + green_rects
-        print(len(all_rects))
+        # print(len(all_rects))
 
         # Sort from left to right by the x-coordinate of the center point
         sorted_rects = sorted(all_rects, key=lambda rect: rect['center'][0])
@@ -804,7 +804,7 @@ class MaskImage (QtWidgets.QWidget):
                 closest_point = min(aligned_centroids_sorted, key=lambda centroid: distance(centroid, point['center']))
                 point['center'] = tuple(closest_point)
         # Convert the aligned_image back to the original image type (e.g., uint8)
-        print(self.sorted_cluster)
+        # print(self.sorted_cluster)
         aligned_image = aligned_image.astype(np.uint8)
 
         self.newimage = aligned_image

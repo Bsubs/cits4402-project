@@ -71,13 +71,13 @@ class TriangulateImage (QtWidgets.QWidget):
     # Function to perform initial calibration of the reference camera
     def calibrate_11_L(self):
         # Retrieve 2D and 32 coordinates from camera 11L
-        stuff1 = self.widgets['Camera 11 RGB Left'].ret_sorted_clusters()
-        sorted_cluster_2D = np.array(self.process_data(stuff1), dtype=np.float32)
+        labelled_2D_coords = self.widgets['Camera 11 RGB Left'].ret_sorted_clusters()
+        sorted_cluster_2D = np.array(self.process_data(labelled_2D_coords), dtype=np.float32)
 
         cam_11_L_3D = self.widgets['Camera 11 RGB Left'].ret_3D_coords()
         sorted_cluster_3D = np.array(self.process_data(cam_11_L_3D), dtype=np.float32)
 
-        self.overall_3D_points.append(sorted_cluster_3D)
+        self.overall_3D_points.append(cam_11_L_3D)
 
         # Define the camera intrinsic matrix 
         # Left Camera intrinsic parameters
@@ -113,10 +113,11 @@ class TriangulateImage (QtWidgets.QWidget):
 
         # Find matching labels
         matching_labels = set(labels_1).intersection(labels_2)
+        non_matching_labels = set(labels_2).difference(labels_1)
 
         coordinates_2D_1 = []
         coordinates_2D_2 = []
-        coordinates_2D_remainder = []
+        coordinates_3D_remainder = []
         coordinates_3D_1 = []
         coordinates_3D_2 = []
 
@@ -147,17 +148,15 @@ class TriangulateImage (QtWidgets.QWidget):
                             coordinates_3D_2.append(target['center'])
 
         # Get the leftover points from image 2
-        for targets in coords_3D2:
-            isRemainder = True
-            for label in matching_labels:
+        for label in non_matching_labels:
+            for targets in coords_3D2:
                 if targets[0]['label'] == label:
-                    isRemainder = False
-            
-            if isRemainder:
-                for target in targets[1:]:
-                    coordinates_2D_remainder.append(target['center'])
+                    for target in targets[1:]:
+                        if 'center' in target:
+                            coordinates_3D_remainder.append(target['center'])
 
-        return matching_labels, np.array(coordinates_2D_1, dtype=np.float32), np.array(coordinates_2D_2, dtype=np.float32), np.array(coordinates_2D_remainder, dtype=np.float32), np.array(coordinates_3D_1, dtype=np.float32), np.array(coordinates_3D_2, dtype=np.float32)
+
+        return matching_labels, non_matching_labels, np.array(coordinates_2D_1, dtype=np.float32), np.array(coordinates_2D_2, dtype=np.float32), np.array(coordinates_3D_remainder, dtype=np.float32), np.array(coordinates_3D_1, dtype=np.float32), np.array(coordinates_3D_2, dtype=np.float32)
 
     # Calibrate the stereo camera 11R
     def calibrate_11_R(self):
@@ -213,7 +212,7 @@ class TriangulateImage (QtWidgets.QWidget):
         # Camera 2 Distortion Parameters
         camera2_distortion = np.array([k1, k2, p1, p2, k3])
 
-        matched_labels, camera1_2D, camera2_2D, camera_2D_remainder, camera_1_3D, camera_2_3D = self.get_matching_coordinates(self.widgets['Camera 11 RGB Left'].ret_sorted_clusters(), 
+        matched_labels, non_matched_labels, camera1_2D, camera2_2D, camera_2D_remainder, camera_1_3D, camera_2_3D = self.get_matching_coordinates(self.widgets['Camera 11 RGB Left'].ret_sorted_clusters(), 
                                                                                                                  self.widgets['Camera 11 RGB Right'].ret_sorted_clusters(), 
                                                                                                                  self.widgets['Camera 11 RGB Left'].ret_3D_coords(),
                                                                                                                  self.widgets['Camera 11 RGB Right'].ret_3D_coords())
@@ -298,7 +297,8 @@ class TriangulateImage (QtWidgets.QWidget):
 
         # Plot the 3D points
         for points in self.overall_3D_points:
-            ax.scatter(points[:, 0], points[:, 1], points[:, 2], c='blue')
+            unlabeled_points = np.array(self.process_data(points), dtype=np.float32)
+            ax.scatter(unlabeled_points[:, 0], unlabeled_points[:, 1], unlabeled_points[:, 2], c='blue')
 
         # Set axes labels and display the plot
         ax.set_xlabel('X')
@@ -311,6 +311,7 @@ class TriangulateImage (QtWidgets.QWidget):
         
         # The order of cameras that we are going to calibrate. 
         cameras = ['Camera 11 RGB Right', 'Camera 71 RGB', 'Camera 74 RGB', 'Camera 73 RGB', 'Camera 72 RGB']
+        # cameras = ['Camera 11 RGB Right', 'Camera 71 RGB']
 
         # Loop starts at 1 because we already calibrated camera 11
         for i, camera in enumerate(cameras[1:], start=1):
@@ -340,9 +341,9 @@ class TriangulateImage (QtWidgets.QWidget):
             camera_current_distortion = np.array([k1, k2, p1, p2, k3], dtype=np.float32)
 
             # Get the point data
-            matched_labels, camera1_2D, camera2_2D, camera2_3D_remainder, camera_1_3D, camera_2_3D = self.get_matching_coordinates(self.widgets[cameras[i-1]].ret_sorted_clusters(), 
+            matched_labels, non_matched_labels, camera1_2D, camera2_2D, camera2_3D_remainder, camera_1_3D, camera_2_3D = self.get_matching_coordinates(self.widgets[cameras[i-1]].ret_sorted_clusters(), 
                                                                                                                     self.widgets[camera].ret_sorted_clusters(), 
-                                                                                                                    self.widgets[cameras[i-1]].ret_3D_coords(),
+                                                                                                                    self.overall_3D_points[i-1],
                                                                                                                     self.widgets[camera].ret_3D_coords())
 
             # Get image size
@@ -397,19 +398,58 @@ class TriangulateImage (QtWidgets.QWidget):
                 camera2_3d_points_transformed.append(point_transformed_3d.tolist())
 
             camera2_3d_points_transformed = np.array(camera2_3d_points_transformed, dtype=np.float32)
-            if camera == 'Camera 74 RGB':
-                camera2_3d_points_transformed[:, 0] -= 100
-                camera2_3d_points_transformed[:, 2] += 300
+            
+            camera2_3d_points_labelled = []
 
-            if camera == 'Camera 73 RGB':
-                camera2_3d_points_transformed[:, 1] += 180
-                camera2_3d_points_transformed[:, 2] += 450
+            for k, label in enumerate(non_matched_labels):
+                hexagon = []
+                hexagon.append({'label': label})
+                start_index = max(0, 6 * (k + 1) - 6)
+                for j in range(start_index, 6*(k+1)):
+                    x = camera2_3d_points_transformed[j][0]
+                    y = camera2_3d_points_transformed[j][1]
+                    z = camera2_3d_points_transformed[j][2]
+
+                    hexagon.append({'center': (x,y,z)})
+
+                camera2_3d_points_labelled.append(hexagon)
+
+            for k, label in enumerate(matched_labels):
+                hexagon = []
+                hexagon.append({'label': label})
+                start_index = max(0, 6 * (k + 1) - 6)
+
+                for j in range(start_index, 6*(k+1)):
+                    x = camera_1_3D[j][0]
+                    y = camera_1_3D[j][1]
+                    z = camera_1_3D[j][2]
+
+                    hexagon.append({'center': (x,y,z)})
+
+                camera2_3d_points_labelled.append(hexagon)
+
+            print('New 3D points:')
+            print(camera2_3d_points_labelled)
+            print('Camera13D_size: ' , camera_1_3D.size)
+            print('camera2_3d_points_transformed_size: ' , camera2_3d_points_transformed.size)
+            print('matched labels:')
+            print(matched_labels)
+            print('non matched labels:')
+            print(non_matched_labels)
+
+            # if camera == 'Camera 74 RGB':
+            #     camera2_3d_points_transformed[:, 0] -= 100
+            #     camera2_3d_points_transformed[:, 2] += 300
+
+            # if camera == 'Camera 73 RGB':
+            #     camera2_3d_points_transformed[:, 1] += 180
+            #     camera2_3d_points_transformed[:, 2] += 450
 
 
             print('3D coordinates of: ' + camera)
             print(camera2_3d_points_transformed)
 
-            self.overall_3D_points.append(camera2_3d_points_transformed)
+            self.overall_3D_points.append(camera2_3d_points_labelled)
 
             # Convert rotation vector to rotation matrix
             rotation_matrix_2, _ = cv2.Rodrigues(np.array(current_camera_rotation_vector, dtype=np.float32))
@@ -431,7 +471,8 @@ class TriangulateImage (QtWidgets.QWidget):
 
         # Plot the 3D points
         for points in self.overall_3D_points:
-            ax.scatter(points[:, 0], points[:, 1], points[:, 2], c='blue')
+            unlabelled_points = self.process_data(points)
+            ax.scatter(unlabelled_points[:, 0], unlabelled_points[:, 1], unlabelled_points[:, 2], c='blue')
 
         for arrow in self.overall_camera_pose:
             ax.quiver(*arrow[0], *arrow[1], color='red')
