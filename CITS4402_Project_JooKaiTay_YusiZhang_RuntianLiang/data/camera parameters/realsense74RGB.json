@@ -1,0 +1,179 @@
+{
+    "B1": {
+        "isSet": 0,
+        "isUncertain": 0,
+        "stddev": 0,
+        "val": 0
+    },
+    "B2": {
+        "isSet": 0,
+        "isUncertain": 0,
+        "stddev": 0,
+        "val": 0
+    },
+    "cx": {
+        "isSet": 1,
+        "isUncertain": 0,
+        "stddev": 0,
+        "val": 424
+    },
+    "cy": {
+        "isSet": 1,
+        "isUncertain": 0,
+        "stddev": 0,
+        "val": 240
+    },
+    "exportedCameraName": "RealSenseRGB",
+    "f": {
+        "isSet": 1,
+        "isUncertain": 0,
+        "stddev": 0,
+        "val": 420
+    },
+    "k1": {
+        "isSet": 0,
+        "isUncertain": 0,
+        "stddev": 0,
+        "val": 0
+    },
+    "k2": {
+        "isSet": 0,
+        "isUncertain": 0,
+        "stddev": 0,
+        "val": 0
+    },
+    "k3": {
+        "isSet": 0,
+        "isUncertain": 0,
+        "stddev": 0,
+        "val": 0
+    },
+    "k4": {
+        "isSet": 0,
+        "isUncertain": 0,
+        "stddev": 0,
+        "val": 0
+    },
+    "k5": {
+        "isSet": 0,
+        "isUncertain": 0,
+        "stddev": 0,
+        "val": 0
+    },
+    "k6": {
+        "isSet": 0,
+        "isUncertain": 0,
+        "stddev": 0,
+        "val": 0
+    },
+    "oB1": {
+        "isSet": 0,
+        "isUncertain": 0,
+        "stddev": 0,
+        "val": 0
+    },
+    "oB2": {
+        "isSet": 0,
+        "isUncertain": 0,
+        "stddev": 0,
+        "val": 0
+    },
+    "ocx": {
+        "isSet": 1,
+        "isUncertain": 0,
+        "stddev": 0,
+        "val": 420.4957580566406
+    },
+    "ocy": {
+        "isSet": 1,
+        "isUncertain": 0,
+        "stddev": 0,
+        "val": 242.20753479003906
+    },
+    "of": {
+        "isSet": 1,
+        "isUncertain": 0,
+        "stddev": 0,
+        "val": 594.8233642578125
+    },
+    "ok1": {
+        "isSet": 1,
+        "isUncertain": 0,
+        "stddev": 0,
+        "val": 0.14313173294067383
+    },
+    "ok2": {
+        "isSet": 1,
+        "isUncertain": 0,
+        "stddev": 0,
+        "val": -0.4348469376564026
+    },
+    "ok3": {
+        "isSet": 1,
+        "isUncertain": 0,
+        "stddev": 0,
+        "val": 0.3693040907382965
+    },
+    "ok4": {
+        "isSet": 0,
+        "isUncertain": 0,
+        "stddev": 0,
+        "val": 0
+    },
+    "ok5": {
+        "isSet": 0,
+        "isUncertain": 0,
+        "stddev": 0,
+        "val": 0
+    },
+    "ok6": {
+        "isSet": 0,
+        "isUncertain": 0,
+        "stddev": 0,
+        "val": 0
+    },
+    "op1": {
+        "isSet": 1,
+        "isUncertain": 0,
+        "stddev": 0,
+        "val": -0.00025131707661785185
+    },
+    "op2": {
+        "isSet": 1,
+        "isUncertain": 0,
+        "stddev": 0,
+        "val": -0.001663277973420918
+    },
+    "opix_ratio": {
+        "isSet": 0,
+        "isUncertain": 0,
+        "stddev": 0,
+        "val": 0
+    },
+    "p1": {
+        "isSet": 0,
+        "isUncertain": 0,
+        "stddev": 0,
+        "val": 0
+    },
+    "p2": {
+        "isSet": 0,
+        "isUncertain": 0,
+        "stddev": 0,
+        "val": 0
+    },
+    "pix_ratio": {
+        "isSet": 1,
+        "isUncertain": 0,
+        "stddev": 0,
+        "val": 1
+    },
+    "s": {
+        "h": 480,
+        "w": 848
+    },
+    "useDRd": false,
+    "useRd": true,
+    "useSd": false,
+    "useTd": true
+}

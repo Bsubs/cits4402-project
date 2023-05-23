@@ -1,0 +1,61 @@
+{
+    "exportedStereoRigName": "ZEDRig",
+    "ofsrx": {
+        "isSet": 1,
+        "isUncertain": 1,
+        "stddev": 3,
+        "val": 0
+    },
+    "ofsry": {
+        "isSet": 1,
+        "isUncertain": 1,
+        "stddev": 3,
+        "val": 0
+    },
+    "ofsrz": {
+        "isSet": 1,
+        "isUncertain": 1,
+        "stddev": 3,
+        "val": 0
+    },
+    "ofsx": {
+        "isSet": 1,
+        "isUncertain": 1,
+        "stddev": 1,
+        "val": 120
+    },
+    "ofsy": {
+        "isSet": 1,
+        "isUncertain": 1,
+        "stddev": 1,
+        "val": 0
+    },
+    "ofsz": {
+        "isSet": 1,
+        "isUncertain": 1,
+        "stddev": 1,
+        "val": 0
+    },
+    "oofs": {
+        "CovMatTrig": [
+        ],
+        "isSet": 1,
+        "isUncertain": 0,
+        "vals": [
+            119.9543228149414,
+            0.005216991528868675,
+            0.03254878148436546
+        ]
+    },
+    "oofsr": {
+        "CovMatTrig": [
+        ],
+        "isSet": 1,
+        "isUncertain": 0,
+        "vals": [
+            0.0027044836897403,
+            -0.018978217616677284,
+            0.0011518205283209682
+        ]
+    }
+}
