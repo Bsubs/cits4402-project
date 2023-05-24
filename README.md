@@ -31,7 +31,8 @@ CITS4402 Project - Joo Kai Tay (22489437), Yusi Zhang (23458522), Runtian Liang 
 
 **IMPORTANT:**
 - An interesting behaviour was noticed when running the application on PCs with low performance CPUs/GPUs. This would cause one of the targets to disappear from camera 11 which would cause the code the crash. If this is the case follow these steps:
-    - In the tab `Camera 11 Left` enter the following hyperparameters using the sliders provided:
+    - Click the `Perform Image Segmentation for all Cameras` and wait for the code to finish executing. (Do not skip this step)
+    - Navigate to the tab `Camera 11 Left` and enter the following hyperparameters using the sliders provided:
         - tminColor: 56
         - tdiffColor: 75
         - tminArea: 40
@@ -39,6 +40,9 @@ CITS4402 Project - Joo Kai Tay (22489437), Yusi Zhang (23458522), Runtian Liang 
         - tDistance: 27
         - taxisRatio: 2.5
         - tellipse: 7
+    - Click the `Perform Image Segmentation` button at the top of the screen
+    - Wait for the code to finish executing
+    - Navigate to the `3D render of room` tab and proceed as the previous instructions specified
     - These hyperparameters should allow the program to run smoothly on low performance machines
 
 ## Purpose and Design of the Application
