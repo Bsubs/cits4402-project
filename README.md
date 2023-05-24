@@ -28,6 +28,19 @@ CITS4402 Project - Joo Kai Tay (22489437), Yusi Zhang (23458522), Runtian Liang 
             - You should fullscreen this 3D plot as it becomes much easier to see the targets when the plot is larger
             - You can manupulate the plot using your mouse to see the plotted targets from different angles 
 
+
+**IMPORTANT:**
+- An interesting behaviour was noticed when running the application on PCs with low performance CPUs/GPUs. This would cause one of the targets to disappear from camera 11 which would cause the code the crash. If this is the case follow these steps:
+    - In the tab `Camera 11 Left` enter the following hyperparameters using the sliders provided:
+        - tminColor: 56
+        - tdiffColor: 75
+        - tminArea: 40
+        - tmaxArea: 150
+        - tDistance: 27
+        - taxisRatio: 2.5
+        - tellipse: 7
+    - These hyperparameters should allow the program to run smoothly on low performance machines
+
 ## Purpose and Design of the Application
 **Purpose**
 The purpose of the application is to implement the callibration process for a holographic acquisition rig.
